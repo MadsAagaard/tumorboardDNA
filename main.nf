@@ -433,7 +433,7 @@ workflow.onComplete {
     }.findAll { it != null } // Filter out nulls, which represent no match found
 
     // Only send email if --nomail is not specified and duration is longer than 20 minutes
-    if (!params.nomail && workflow.duration > 1200000) {
+    if (!params.nomail && workflow.duration > 1200000 && workflow.success) {
         if (System.getenv("USER") in ["raspau", "mmaj"]) {
             
             def workDirMessage = params.keepwork ? "WorkDir             : ${workflow.workDir}" : "WorkDir             : Deleted"
