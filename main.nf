@@ -459,7 +459,7 @@ workflow.onComplete {
     }
 
     // Handle deletion of WorkDir based on --keepwork parameter
-    if (!params.keepwork) {
+    if (!params.keepwork && workflow.duration > 1200000 && workflow.success) {
         println("Deleting work directory: ${workflow.workDir}")
         "rm -rf ${workflow.workDir}".execute()
     }
