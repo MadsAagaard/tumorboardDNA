@@ -17,6 +17,8 @@ switch (params.gatk) {
     case 'new':
     gatk_image="gatk4400.sif";
     break;
+    case 'latest':
+    gatk_image="gatk4500.sif";
     default:
     gatk_image="gatk4400.sif";
     break;
