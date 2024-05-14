@@ -210,7 +210,7 @@ Channel
 
 process inputFiles_symlinks_fq{
     errorStrategy 'ignore'
-    publishDir "${caseID}/${params.outdir}/fq_symlinks/", mode: 'link', pattern:'*.{fastq,fq}.gz'
+    publishDir "${caseID}/${outputDir}/fq_symlinks/", mode: 'link', pattern:'*.{fastq,fq}.gz'
     input:
     tuple val(caseID), val(sampleID), path(r1),path(r2), val(type)// from read_input2
     
@@ -225,7 +225,9 @@ process inputFiles_symlinks_fq{
 
 process inputFiles_symlinks_cram{
     errorStrategy 'ignore'
-    publishDir "${caseID}/${params.outdir}/cram_TN_symlinks/", mode: 'link', pattern: '*.{ba,cr}*'
+    publishDir "${caseID}/${outputDir}/cram_TN_symlinks/", mode: 'link', pattern: '*.{ba,cr}*'
+    publishDir "${caseID}/${outputDir}/variantcalls/Alignment_symlinks/", mode: 'link', pattern: "*.BWA.MD.cr*"
+
     input:
 
     tuple val(caseID), val(sampleID), path(cram), path(crai),val(type)    
@@ -417,7 +419,7 @@ process tb_cram_bam {
 process tb_samtools {
     errorStrategy 'ignore'
     tag "$sampleID"
-    publishDir "${caseID}/${params.outdir}/QC/", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/QC/", mode: 'copy'
 
     input:
     tuple val(caseID), val(sampleID),  path(bam), path(bai),val(type) 
@@ -434,7 +436,7 @@ process tb_samtools {
 process tb_qualimap {
     errorStrategy 'ignore'
     tag "$sampleID"
-    publishDir "${caseID}/${params.outdir}/QC/bamQC", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/QC/bamQC", mode: 'copy'
 
     cpus 10
     input:
@@ -460,7 +462,7 @@ process tb_fastqc_bam {
     errorStrategy 'ignore'
     tag "$sampleID"
     cpus 1
-    publishDir "${caseID}/${params.outdir}/QC/", mode: 'copy',saveAs: { filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename" }
+    publishDir "${caseID}/${outputDir}/QC/", mode: 'copy',saveAs: { filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename" }
     input:
     tuple val(caseID), val(sampleID),  path(bam), path(bai),val(type)
     
@@ -488,7 +490,7 @@ process multiQC {
     singularity run -B ${s_bind} ${simgpath}/multiqc.sif \
     -c ${multiqc_config} \
     -n ${date}.TN_WES.multiQC.report.html \
-    -f -q  ${launchDir}/*/${params.outdir}/QC/
+    -f -q  ${launchDir}/*/${outputDir}/QC/
     """
 }
 
@@ -506,7 +508,7 @@ process tb_haplotypecaller {
     tuple val(caseID), val(sampleID), path(cram), path(crai),val(type) 
     
     output:
-    tuple val(caseID), val(sampleID),  path("${caseID}.${sampleID}.${type}.haplotypecaller.vcf"), path("${caseID}.${sampleID}.${type}.haplotypecaller.vcf.idx"),emit: sample_gvcf
+    tuple val(caseID), val(sampleID),  path("${caseID}.${sampleID}.${type}.haplotypecaller.vcf.gz"), path("${caseID}.${sampleID}.${type}.haplotypecaller.vcf.gz.tbi"),emit: sample_gvcf
     path("${caseID}.${sampleID}.${type}.g.*")
     path("${caseID}.${sampleID}.${type}.HCbamout.*")
     path("${crai}")
@@ -522,13 +524,13 @@ process tb_haplotypecaller {
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
     --dont-use-soft-clipped-bases \
-    -O ${caseID}.${sampleID}.${type}.g.vcf \
+    -O ${caseID}.${sampleID}.${type}.g.vcf.gz \
     -bamout ${caseID}.${sampleID}.${type}.HCbamout.bam
     
     ${gatk_exec} GenotypeGVCFs \
     -R ${genome_fasta} \
-    -V ${caseID}.${sampleID}.${type}.g.vcf \
-    -O ${caseID}.${sampleID}.${type}.haplotypecaller.vcf \
+    -V ${caseID}.${sampleID}.${type}.g.vcf.gz \
+    -O ${caseID}.${sampleID}.${type}.haplotypecaller.vcf.gz \
     -G StandardAnnotation \
     -G AS_StandardAnnotation
     """
@@ -546,10 +548,10 @@ process mutect2 {
     input:
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
     output:
-    tuple val(caseID), val(sampleID_tumor), path("${caseID}.mutect2.PASSonly.vcf"), path("${caseID}.mutect2.PASSonly.vcf.idx"),emit: mutect2_allPASS 
+    tuple val(caseID), val(sampleID_tumor), path("${caseID}.mutect2.PASSonly.vcf.gz"), path("${caseID}.mutect2.PASSonly.vcf.gz.tbi"),emit: mutect2_allPASS 
   
-    tuple val(caseID), path("${caseID}.mutect2.tumor.PASSonly.vcf"), path("${caseID}.mutect2.tumor.PASSonly.vcf.idx"),emit: mutect2_tumorPASS 
-    tuple val(caseID), path("${caseID}.mutect2.for.VarSeq.vcf"), path("${caseID}.mutect2.for.VarSeq.vcf.idx"), emit: mutect2_vcf
+    tuple val(caseID), path("${caseID}.mutect2.tumor.PASSonly.vcf.gz"), path("${caseID}.mutect2.tumor.PASSonly.vcf.gz.tbi"),emit: mutect2_tumorPASS 
+    tuple val(caseID), path("${caseID}.mutect2.for.VarSeq.vcf.gz"), path("${caseID}.mutect2.for.VarSeq.vcf.gz.tbi"), emit: mutect2_vcf
     
     path("*.{tsv,table,stats}")
     path("*tumor.PASSonly.*")
@@ -569,7 +571,7 @@ process mutect2 {
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
     --smith-waterman FASTEST_AVAILABLE \
-    -O ${caseID}.mutect2.raw.vcf \
+    -O ${caseID}.mutect2.raw.vcf.gz \
     -bamout ${caseID}.mutect2.bamout.bam \
     --f1r2-tar-gz ${caseID}.within.f1r2.tar.gz
     
@@ -588,22 +590,22 @@ process mutect2 {
     -O ${caseID}.contamination.table
     
     ${gatk_exec} FilterMutectCalls \
-    -V ${caseID}.mutect2.raw.vcf \
+    -V ${caseID}.mutect2.raw.vcf.gz \
     -R ${genome_fasta} \
     --tumor-segmentation ${caseID}.segments.table \
     --contamination-table ${caseID}.contamination.table \
     --min-allele-fraction 0.001 \
-    -O ${caseID}.mutect2.for.VarSeq.vcf
+    -O ${caseID}.mutect2.for.VarSeq.vcf.gz
     
     ${gatk_exec} SelectVariants -R ${genome_fasta} \
-    -V ${caseID}.mutect2.for.VarSeq.vcf \
+    -V ${caseID}.mutect2.for.VarSeq.vcf.gz \
     --exclude-filtered \
-    -O ${caseID}.mutect2.PASSonly.vcf
+    -O ${caseID}.mutect2.PASSonly.vcf.gz
     
     ${gatk_exec} SelectVariants -R ${genome_fasta} \
-    -V ${caseID}.mutect2.for.VarSeq.vcf \
+    -V ${caseID}.mutect2.for.VarSeq.vcf.gz \
     --exclude-filtered -xl-sn ${sampleID_normal} --exclude-non-variants \
-    -O ${caseID}.mutect2.tumor.PASSonly.vcf
+    -O ${caseID}.mutect2.tumor.PASSonly.vcf.gz
     """
 }
 
@@ -734,8 +736,8 @@ process sequenza_conda {
 process sequenza_R_output_conda {
     errorStrategy 'ignore'
     tag "$caseID"
-    publishDir "${caseID}/${params.outdir}/", mode: 'copy'
-    publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*_{segments,alternative_fit,genome_view}.{txt,pdf}"
+    publishDir "${caseID}/${outputDir}/", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*_{segments,alternative_fit,genome_view}.{txt,pdf}"
 
     conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenzaEnv'
     input:
@@ -758,8 +760,8 @@ process sequenza_R_output_conda {
 process pcgr_v103 {
     tag "$caseID"
     errorStrategy 'ignore'
-    publishDir "${caseID}/${params.outdir}/PCGR/", mode: 'copy', pattern: "*.pcgr_acmg.*"
-    publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
+    publishDir "${caseID}/${outputDir}/PCGR/", mode: 'copy', pattern: "*.pcgr_acmg.*"
+    publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
 
@@ -807,7 +809,7 @@ process pcgr_v103 {
 process pcgr_v141 {
     tag "$caseID"
     errorStrategy 'ignore'
-    publishDir "${caseID}/${params.outdir}/PCGR141/", mode: 'copy', pattern: "*.pcgr_acmg.*"
+    publishDir "${caseID}/${outputDir}/PCGR141/", mode: 'copy', pattern: "*.pcgr_acmg.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
