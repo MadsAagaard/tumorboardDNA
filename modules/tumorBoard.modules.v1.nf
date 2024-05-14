@@ -364,7 +364,8 @@ process tb_markDup_v3_cram {
     maxForks 6
     tag "$sampleID"
     publishDir "${caseID}/${outputDir}/CRAM/", mode: 'copy', pattern: "*.BWA.MD.cr*"
-    
+    publishDir "${caseID}/${outputDir}/variantcalls/Alignment_symlinks/", mode: 'link', pattern: "*.BWA.MD.cr*"
+
     input:
     tuple val(caseID),val(sampleID), path(bam), val(type)
     
