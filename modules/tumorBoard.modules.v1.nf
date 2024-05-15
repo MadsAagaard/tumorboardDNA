@@ -226,7 +226,7 @@ process inputFiles_symlinks_fq{
 process inputFiles_symlinks_cram{
     errorStrategy 'ignore'
     publishDir "${caseID}/${outputDir}/cram_TN_symlinks/", mode: 'link', pattern: '*.{ba,cr}*'
-    publishDir "${caseID}/${outputDir}/variantcalls/Alignment_symlinks/", mode: 'link', pattern: "*.BWA.MD.cr*"
+    publishDir "${caseID}/${outputDir}/variantcalls/Alignment_symlinks/", mode: 'link', pattern: "*.{ba,cr}*"
 
     input:
 
