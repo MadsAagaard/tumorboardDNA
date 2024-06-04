@@ -608,6 +608,7 @@ process mutect2 {
     -O ${caseID}.mutect2.tumor.PASSonly.vcf.gz
     """
 }
+
 /*
 process strelka2 {
     errorStrategy 'ignore'
@@ -660,7 +661,7 @@ process strelka2 {
 
     output:
     path("*.strelka2.*")
-    tuple val(caseID), path("${caseID}.strelka2.merged.vaf.vcf.gz"),emit: strelkarenameVCF
+    tuple val(caseID), path("${caseID}.strelka2.merged.vaf.vcf.gz"), emit: strelkarenameVCF
     
     script:
     """
@@ -966,7 +967,7 @@ workflow SUB_DNA_TUMOR_NORMAL {
     main:
     mutect2(tumorNormal_bam_ch)
     strelka2(tumorNormal_bam_ch)
-    strelka2_rename(tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF))
+    //strelka2_rename(tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF))
     msisensor(tumorNormal_bam_ch)
   //  sequenza(tumorNormal_bam_ch)
    // sequenza_R_output(sequenza.out)
