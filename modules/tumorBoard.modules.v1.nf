@@ -608,7 +608,7 @@ process mutect2 {
     -O ${caseID}.mutect2.tumor.PASSonly.vcf.gz
     """
 }
-
+/*
 process strelka2 {
     errorStrategy 'ignore'
     tag "$caseID"
@@ -645,6 +645,80 @@ process strelka2 {
     -O ${caseID}.strelka2.merged.vcf 
     """
 }
+*/
+
+
+
+process strelka2 {
+    errorStrategy 'ignore'
+    tag "$caseID"
+    publishDir "${caseID}/${outputDir}/variantcalls/strelka2", mode: 'copy'
+    cpus 10
+
+    input: 
+    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+
+    output:
+    path("*.strelka2.*")
+    tuple val(caseID), path("${caseID}.strelka2.merged.vaf.vcf.gz"),emit: strelkarenameVCF
+    
+    script:
+    """
+    singularity run -B ${s_bind} ${simgpath}/strelka2_2.9.10.sif /tools/strelka2/bin/configureStrelkaSomaticWorkflow.py \
+    --normalBam ${bamN} \
+    --tumorBam ${bamT} \
+    --referenceFasta  ${genome_fasta} \
+    --exome \
+    --runDir strelka
+
+    singularity run -B ${s_bind} ${simgpath}/strelka2_2.9.10.sif python2 strelka/runWorkflow.py \
+    -j ${task.cpus} \
+    -m local
+
+    python /data/sharedc/programmer/VCFpytools/add_vaf_strelka2.py \
+    --input strelka/results/variants/somatic.indels.vcf.gz \
+    --output ${caseID}.strelka2.indels.vaf.vcf \
+    --variant indel
+
+    python /data/sharedc/programmer/VCFpytools/add_vaf_strelka2.py \
+    --input strelka/results/variants/somatic.snvs.vcf.gz \
+    --output ${caseID}.strelka2.snvs.vaf.vcf \
+    --variant snv
+
+    ${gatk_exec} MergeVcfs \
+    -I ${caseID}.strelka2.snvs.vaf.vcf \
+    -I ${caseID}.strelka2.indels.vaf.vcf \
+    -O ${caseID}.strelka2.merged.vaf.vcf.gz 
+    """
+}
+
+
+
+process strelka2_rename {
+    errorStrategy 'ignore'
+    tag "$caseID"
+    publishDir "${caseID}/${outputDir}/variantcalls/strelka2", mode: 'copy'
+
+    input: 
+    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT), val(typeT), path(strelkavcf)
+    output:
+    tuple val(caseID), path("$caseID}.strelka.rename.vaf.vcf.gz"),path("$caseID}.strelka.rename.vaf.vcf.gz.tbi"// into rnaSS1    
+
+    shell:
+    '''
+    println "TUMOR !{sampleID_tumor}" >> !caseID}.strelka_rename.txt
+    println "NORMAL !{sampleID_normal}" >> !caseID}.strelka_rename.txt
+
+    bcftools reheader \
+    --samples $caseID}.strelka_rename.txt\
+    -o !{caseID}.strelka.rename.vaf.vcf.gz !{strelkavcf}
+
+    bcftools index -t !{caseID}.strelka.rename.vaf.vcf.gz
+    '''
+
+
+}
+
 
 process msisensor {
     errorStrategy 'ignore'
@@ -653,7 +727,7 @@ process msisensor {
     publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*_msi"
 
     input: 
-    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT), val(typeT)
 
     output:
     path("*_msi*")
@@ -892,6 +966,7 @@ workflow SUB_DNA_TUMOR_NORMAL {
     main:
     mutect2(tumorNormal_bam_ch)
     strelka2(tumorNormal_bam_ch)
+    strelka2_rename(tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF))
     msisensor(tumorNormal_bam_ch)
   //  sequenza(tumorNormal_bam_ch)
    // sequenza_R_output(sequenza.out)
