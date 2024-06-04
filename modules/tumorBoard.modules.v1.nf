@@ -694,7 +694,7 @@ process strelka2 {
 }
 
 
-
+/*
 process strelka2_rename {
     errorStrategy 'ignore'
     tag "$caseID"
@@ -716,10 +716,8 @@ process strelka2_rename {
 
     bcftools index -t !{caseID}.strelka.rename.vaf.vcf.gz
     '''
-
-
 }
-
+*/
 
 process msisensor {
     errorStrategy 'ignore'
