@@ -282,8 +282,7 @@ include {
          SUB_DNA_QC;
          SUB_DNA_TUMOR_NORMAL } from "./modules/tumorBoard.modules.v1.nf" 
 
-//from "./modules/tumorBoard.modules.v1.nf"
-//"/data/shared/analyseScripts/modules/tumorBoard.modules.v1.nf" 
+
 
 workflow DNA_TUMOR_NORMAL {
     take:
@@ -339,7 +338,8 @@ workflow {
         tb_cram_bam.out.bam
         .filter{it =~ /NORMAL/}
         .set { bam_normals_ch }
-
+        // above: caseid, npn, cram, crai, type
+        
         tb_cram_bam.out.bam
         .filter{it =~ /TUMOR/}
         .set { bam_tumor_ch }
@@ -347,8 +347,8 @@ workflow {
         bam_normals_ch
         .join(bam_tumor_ch)
         .set { tumorNormal_bam_ch }
-        // above structure: tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
-
+      // above structure: tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+        
         SUB_DNA_TUMOR_NORMAL(tumorNormal_bam_ch, caseID_pcgrID)
     }
 }
