@@ -711,8 +711,8 @@ process strelka2_rename {
 
     shell:
     '''
-    printf "TUMOR !{sampleID_tumor}" >> !{caseID}.strelka_rename.txt
-    printf "\nNORMAL !{sampleID_normal}" >> !{caseID}.strelka_rename.txt
+    printf "TUMOR !{sampleID_tumor]_TUMOR" >> !{caseID}.strelka_rename.txt
+    printf "\nNORMAL !{sampleID_normal}_NORMAL" >> !{caseID}.strelka_rename.txt
 
     bcftools reheader \
     --samples !{caseID}.strelka_rename.txt \
