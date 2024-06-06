@@ -712,7 +712,7 @@ process strelka2_rename {
     println "NORMAL !{sampleID_normal}" >> !caseID}.strelka_rename.txt
 
     bcftools reheader \
-    --samples $caseID}.strelka_rename.txt\
+    --samples $caseID}.strelka_rename.txt \
     -o !{caseID}.strelka.rename.vaf.vcf.gz !{strelkavcf}
 
     bcftools index -t !{caseID}.strelka.rename.vaf.vcf.gz
@@ -967,7 +967,7 @@ workflow SUB_DNA_TUMOR_NORMAL {
     main:
     mutect2(tumorNormal_bam_ch)
     strelka2(tumorNormal_bam_ch)
-    strelka2_rename(tumorNormal_bam_ch)//.join(strelka2.out.strelkarenameVCF))
+    strelka2_rename(tumorNormal_bam_ch).join(strelka2.out.strelkarenameVCF))
     msisensor(tumorNormal_bam_ch)
   //  sequenza(tumorNormal_bam_ch)
    // sequenza_R_output(sequenza.out)
