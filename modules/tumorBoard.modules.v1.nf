@@ -702,6 +702,7 @@ process strelka2_rename {
 
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT), val(typeT), path(strelkavcf)
+   
     output:
     tuple val(caseID), path("$caseID}.strelka.rename.vaf.vcf.gz"),path("$caseID}.strelka.rename.vaf.vcf.gz.tbi"// into rnaSS1    
 
@@ -966,7 +967,7 @@ workflow SUB_DNA_TUMOR_NORMAL {
     main:
     mutect2(tumorNormal_bam_ch)
     strelka2(tumorNormal_bam_ch)
-    strelka2_rename(tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF))
+    strelka2_rename(tumorNormal_bam_ch)//.join(strelka2.out.strelkarenameVCF))
     msisensor(tumorNormal_bam_ch)
   //  sequenza(tumorNormal_bam_ch)
    // sequenza_R_output(sequenza.out)
