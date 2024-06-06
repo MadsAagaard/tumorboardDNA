@@ -700,11 +700,14 @@ process strelka2_rename {
     tag "$caseID"
     publishDir "${caseID}/${outputDir}/variantcalls/strelka2", mode: 'copy'
 
+
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN), val(typeN), val(sampleID_tumor),path(bamT), path(baiT), val(typeT), path(strelkavcf)
-   
+
+
     output:
     tuple val(caseID), path("${caseID}.strelka.rename.vaf.vcf.gz"),path("$caseID}.strelka.rename.vaf.vcf.gz.tbi")// into rnaSS1    
+
 
     shell:
     '''
