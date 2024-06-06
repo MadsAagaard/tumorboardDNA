@@ -706,7 +706,7 @@ process strelka2_rename {
 
 
     output:
-    tuple val(caseID), path("${caseID}.strelka.rename.vaf.vcf.gz"),path("$caseID}.strelka.rename.vaf.vcf.gz.tbi")// into rnaSS1    
+    tuple val(caseID), path("${caseID}.strelka.rename.vaf.vcf.gz"),path("${caseID}.strelka.rename.vaf.vcf.gz.tbi")// into rnaSS1    
 
 
     shell:
@@ -715,7 +715,7 @@ process strelka2_rename {
     printf "\nNORMAL !{sampleID_normal}" >> !{caseID}.strelka_rename.txt
 
     bcftools reheader \
-    --samples ${caseID}.strelka_rename.txt \
+    --samples !{caseID}.strelka_rename.txt \
     -o !{caseID}.strelka.rename.vaf.vcf.gz !{strelkavcf}
 
     bcftools index -t !{caseID}.strelka.rename.vaf.vcf.gz
