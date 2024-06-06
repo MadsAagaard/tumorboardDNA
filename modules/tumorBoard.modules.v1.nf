@@ -689,12 +689,12 @@ process strelka2 {
     ${gatk_exec} MergeVcfs \
     -I ${caseID}.strelka2.snvs.vaf.vcf \
     -I ${caseID}.strelka2.indels.vaf.vcf \
-    -O ${caseID}.strelka2.merged.vaf.vcf.gz 
+    -O ${caseID}.strelka2.merged.vaf.vcf.gz
     """
 }
 
 
-/*
+
 process strelka2_rename {
     errorStrategy 'ignore'
     tag "$caseID"
@@ -717,6 +717,7 @@ process strelka2_rename {
     bcftools index -t !{caseID}.strelka.rename.vaf.vcf.gz
     '''
 }
+/*
 */
 
 process msisensor {
@@ -965,7 +966,7 @@ workflow SUB_DNA_TUMOR_NORMAL {
     main:
     mutect2(tumorNormal_bam_ch)
     strelka2(tumorNormal_bam_ch)
-    //strelka2_rename(tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF))
+    strelka2_rename(tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF))
     msisensor(tumorNormal_bam_ch)
   //  sequenza(tumorNormal_bam_ch)
    // sequenza_R_output(sequenza.out)

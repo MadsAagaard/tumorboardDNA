@@ -346,74 +346,12 @@ workflow {
 
         bam_normals_ch
         .join(bam_tumor_ch)
-        .set { tumorNormal_bam_ch }   
+        .set { tumorNormal_bam_ch }
         // above structure: tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
 
         SUB_DNA_TUMOR_NORMAL(tumorNormal_bam_ch, caseID_pcgrID)
     }
 }
-
-/*
-
-
-//------------------------------------------------------------------------//
-//---------------------- Tumor-normal based analysis ---------------------//
-//-----------------------------------------------------------------------//
-
-
-process cfDNA_facets_snp_pileup {
-    errorStrategy 'ignore'
-    tag "$caseID"
-    publishDir "${caseID}/${params.outdir}/facets", mode: 'copy'
-
-    input:
-    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN), val(sampleID_tumor),path(bamT), path(baiT) from facets_input
-   
-    output:
-    tuple val(caseID), path("*.snp_pileup.gz") into facets_snppileup
-   
-    when:
-    !params.germline_only
-   
-    script:
-    """
-    singularity run -B ${s_bind} ${simgpath}/facetssuite.sif snp-pileup-wrapper.R \
-    -vcf ${dbsnp} \
-    -n ${bamN} \
-    -t ${bamT} \
-    -o ${caseID}.facets
-    """
-}
-
-
-process facets_output {
-    errorStrategy 'ignore'
-    tag "$caseID"
-    publishDir "${caseID}/${params.outdir}/facets", mode: 'copy'
-
-    input:
-    tuple val(caseID), path(facets_pileup) from facets_snppileup
-
-    output:
-    path("${caseID}.facets/*")
-    
-    when:
-    !params.germline_only
-    
-    script:
-    """
-    singularity run -B ${s_bind} ${simgpath}/facetssuite.sif run-facets-wrapper.R \
-    -f ${facets_pileup} \
-    -s ${caseID}.facets \
-    -g ${params.genome} \
-    -e -pc 1000 -c 500
-    """
-}
-
-
-
-*/
-
 
 
 workflow.onComplete {
