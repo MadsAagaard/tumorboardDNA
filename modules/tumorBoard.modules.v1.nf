@@ -694,7 +694,7 @@ process strelka2 {
 }
 
 
-/*
+
 process strelka2_rename {
     errorStrategy 'ignore'
     tag "$caseID"
@@ -719,7 +719,7 @@ process strelka2_rename {
     '''
 }
 
-
+/*
 */
 
 process msisensor {
@@ -968,8 +968,8 @@ workflow SUB_DNA_TUMOR_NORMAL {
     main:
     mutect2(tumorNormal_bam_ch)
     strelka2(tumorNormal_bam_ch)
-    //strelka2_rename(tumorNormal_bam_ch).join(strelka2.out.strelkarenameVCF)
-    tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF).view()
+    strelka2_rename(tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF))
+    //tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF).view()
 
     msisensor(tumorNormal_bam_ch)
   //  sequenza(tumorNormal_bam_ch)
