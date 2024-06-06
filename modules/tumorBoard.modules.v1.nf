@@ -967,7 +967,9 @@ workflow SUB_DNA_TUMOR_NORMAL {
     main:
     mutect2(tumorNormal_bam_ch)
     strelka2(tumorNormal_bam_ch)
-    strelka2_rename(tumorNormal_bam_ch).join(strelka2.out.strelkarenameVCF))
+    strelka2_rename(tumorNormal_bam_ch).join(strelka2.out.strelkarenameVCF)
+    tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF).view()
+
     msisensor(tumorNormal_bam_ch)
   //  sequenza(tumorNormal_bam_ch)
    // sequenza_R_output(sequenza.out)
