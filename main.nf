@@ -196,7 +196,6 @@ if (!params.cram && params.fastqInput) {
     NN1.concat(CF1)
     .set { case_fastq_input_ch }
     //above: NN2 and CF2 in the same channel (same structure as NN2 and CF2)
-
     //case_fastq_input_ch.view()
 
 }
