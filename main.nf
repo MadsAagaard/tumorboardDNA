@@ -157,7 +157,7 @@ channel.fromPath(params.samplesheet)
 
 channel.fromPath(params.samplesheet)
     .splitCsv(sep:'\t')
-    .map { row -> tuple(row[0], row[1]+"_EV8")}
+    .map { row -> tuple(row[0], row[1])}
     .set { caseID_normalID } // use for Mutect2 --normal
 
 ///////////////// END: SAMPLESHEET CHANNELS ////////////////////////
@@ -166,7 +166,26 @@ channel.fromPath(params.samplesheet)
 ////////////////// INPUT DATA (FASTQ) CHANNELS ///////////////////
 
 if (params.fastq) {
-    params.reads = "${params.fastq}/**{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
+    params.reads = "${params.fastq}/*{fq,fastq}.gz"
+
+    Channel
+    .fromPath(params.reads, followLinks: true)
+    .map { tuple(it.baseName.tokenize('-').get(0)+"_"+it.baseName.tokenize('-').get(1),it) }
+    .filter {it =~ /_R1/}
+    .set {fastq_inputR1}
+
+
+    Channel
+    .fromPath(params.reads, followLinks: true)
+    .map { tuple(it.baseName.tokenize('-').get(0)+"_"+it.baseName.tokenize('-').get(1),it) }
+    .filter {it =~ /_R2/}
+    .set {fastq_inputR2}
+
+    Channel
+    fastq_inputR1.join(fastq_inputR2)
+    .set { fastq_final }
+
+fastq_final.view()
 }
 
 
@@ -174,7 +193,7 @@ if (!params.cram && !params.fastq && params.fastqInput) {
     params.reads="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
 }
 
-if (!params.cram && params.fastqInput) {
+if (!params.cram && (params.fastqInput || params.fastq)) {
     channel
     .fromFilePairs(params.reads, checkIfExists: true)
     .ifEmpty { error "Cannot find any reads matching: ${params.reads}" }
@@ -212,7 +231,7 @@ if (params.cram ) {
     craifiles="${params.cram}/*{_,-}{EV8}*.crai"
 }
 
-if (!params.fastqInput) {
+if (!params.fastqInput && !params.fastq) {
     Channel
     .fromPath(cramfiles)
     .map { tuple(it.baseName.tokenize('_').get(0),it) }
@@ -352,7 +371,7 @@ workflow {
     }
 }
 
-
+/*
 workflow.onComplete {
     // Read samplesheet and determine format
     def samplesheetLines = new File(params.samplesheet).readLines()
@@ -401,3 +420,4 @@ workflow.onComplete {
         "rm -rf ${workflow.workDir}".execute()
     }
 }
+*/
