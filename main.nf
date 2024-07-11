@@ -186,7 +186,20 @@ if (params.fastq) {
     fastq_inputR1.join(fastq_inputR2)
     .set { fastq_final }
 
-fastq_final.view()
+
+    normalID_caseID.join(fastq_final)
+    .map {tuple(it[1],it[0],it[2],it[3],"NORMAL")}
+    .set { NN1 }
+
+    tumorID_caseID.join(fastq_final)
+    .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
+    .set { CF1 }
+
+    NN1.concat(CF1)
+    .set { case_fastq_input_ch }
+
+case_fastq_input_ch.view()
+
 }
 
 
