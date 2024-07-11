@@ -852,7 +852,6 @@ workflow SUB_DNA_PREPROCESS {
     emit:
     finalBam=tb_markDup_v2_bam_cram.out.markDup_bam //caseID, sampleID, BAM, BAI,type
     finalCram=tb_markDup_v2_bam_cram.out.markDup_cram //caseID, sampleID, CRAM, CRAI,type
-
 }
 
 workflow SUB_DNA_QC {
