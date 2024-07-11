@@ -146,7 +146,6 @@ channel.fromPath(params.samplesheet)
     .map { row -> tuple(row[2], row[0])}
     .set { tumorID_caseID }
 
-tumorID_caseID.view()
 //above: tumor sampleID (NPN), caseID
 
 channel.fromPath(params.samplesheet)
@@ -194,11 +193,12 @@ if (params.fastq) {
     tumorID_caseID.join(fastq_final)
     .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
     .set { CF1 }
-
+NN1.view()
+CF1.view()
     NN1.concat(CF1)
     .set { case_fastq_input_ch }
 
-case_fastq_input_ch.view()
+//case_fastq_input_ch.view()
 
 }
 
