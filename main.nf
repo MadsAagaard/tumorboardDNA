@@ -194,7 +194,7 @@ if (params.fastq) {
     .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
     .set { CF1 }
 
-    NN1.join(CF1)
+    NN1.concat(CF1)
     .set { case_fastq_input_ch }
 
 case_fastq_input_ch.view()
