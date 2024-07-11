@@ -519,7 +519,6 @@ process tb_haplotypecaller {
     -I ${cram} \
     -R ${genome_fasta} \
     -ERC GVCF \
-    -L ${ROI} \
     --smith-waterman FASTEST_AVAILABLE \
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
@@ -566,7 +565,6 @@ process mutect2 {
     -normal ${sampleID_normal} \
     --germline-resource ${mutect_gnomad} \
     --panel-of-normals ${gatk_wgs_pon} \
-    -L ${ROI} \
     --dont-use-soft-clipped-bases \
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
@@ -669,7 +667,6 @@ process strelka2 {
     --normalBam ${bamN} \
     --tumorBam ${bamT} \
     --referenceFasta  ${genome_fasta} \
-    --exome \
     --runDir strelka
 
     singularity run -B ${s_bind} ${simgpath}/strelka2_2.9.10.sif python2 strelka/runWorkflow.py \
@@ -742,55 +739,10 @@ process msisensor {
     msisensor msi \
     -d ${msisensor_list} \
     -n ${bamN} -t ${bamT} \
-    -e ${ROI} \
     -o ${caseID}_msi
     """
 }
-/*
-process sequenza {
-    errorStrategy 'ignore'
-    tag "$caseID"
-    
-    input:
-    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
-    output:
-    tuple val(caseID), path("${caseID}.seqz.final.gz") 
 
-    script:
-    """
-    sequenza-utils bam2seqz -n ${bamN} -t ${bamT} \
-    --fasta ${genome_fasta} \
-    -gc ${sequenza_cg50_wig} \
-    -o ${caseID}.seqz.phase1.gz
-    sequenza-utils seqz_binning --seqz ${caseID}.seqz.phase1.gz \
-    -w 50 -o ${caseID}.seqz.final.gz 
-    """
-}
-
-process sequenza_R_output {
-    errorStrategy 'ignore'
-    tag "$caseID"
-    publishDir "${caseID}/${params.outdir}/", mode: 'copy'
-    publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*_{segments,alternative_fit,genome_view}.{txt,pdf}"
-    input:
-    tuple val(caseID),  path(seqz)
-
-    output:
-    path("sequenza/*")
-
-
-    script:
-    """
-    #!/usr/bin/env Rscript
-    library(readr)
-    readr::local_edition(1)
-    library(sequenza)
-    t1 = sequenza.extract("${seqz}",verbose=F)
-    cp = sequenza.fit(t1)
-    sequenza.results(sequenza.extract = t1, cp.table = cp, sample.id = "${caseID}", out.dir = "sequenza" )
-    """
-}
-*/
 process sequenza_conda {
     errorStrategy 'ignore'
     tag "$caseID"
@@ -836,54 +788,6 @@ process sequenza_R_output_conda {
 }
 
 
-process pcgr_v103 {
-    tag "$caseID"
-    errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR/", mode: 'copy', pattern: "*.pcgr_acmg.*"
-    publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
-    input:
-    tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
-
-    output:
-    path("*.pcgr_acmg.*")
-
-    script:
-    //tumorsite=${pcgr_tumor} ? "--tumor_site ${pcgr_tumor}" : ""
-    """
-    singularity run -B ${s_bind} ${simgpath}/pcgr103.sif pcgr \
-    --input_vcf ${vcf} \
-    --pcgr_dir ${pcgr_data_dir} --output_dir . \
-    --genome_assembly ${pcgr_assembly} \
-    --sample_id ${caseID}_TMB_all \
-    --min_mutations_signatures 100 \
-    --all_reference_signatures \
-    --estimate_tmb --estimate_msi_status \
-    --no_docker \
-    --exclude_dbsnp_nonsomatic \
-    --assay WES \
-    --tumor_site ${pcgr_tumor} \
-    --estimate_signatures \
-    --include_trials
-
-
-    singularity run -B ${s_bind} ${simgpath}/pcgr103.sif pcgr \
-    --input_vcf ${vcf} \
-    --pcgr_dir ${pcgr_data_dir} --output_dir . \
-    --genome_assembly ${pcgr_assembly} \
-    --sample_id ${caseID}_TMB_NonSyn \
-    --min_mutations_signatures 100 \
-    --all_reference_signatures \
-    --estimate_tmb --estimate_msi_status \
-    --no_docker \
-    --exclude_dbsnp_nonsomatic \
-    --assay WES \
-    --tumor_site ${pcgr_tumor} \
-    --estimate_signatures \
-    --tmb_algorithm nonsyn \
-    --include_trials
-    """
-}
-
 
 process pcgr_v141 {
     tag "$caseID"
@@ -908,7 +812,6 @@ process pcgr_v141 {
     --all_reference_signatures \
     --estimate_tmb --estimate_msi_status \
     --exclude_dbsnp_nonsomatic \
-    --assay WES \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures \
     --include_trials
@@ -923,7 +826,6 @@ process pcgr_v141 {
     --all_reference_signatures \
     --estimate_tmb --estimate_msi_status \
     --exclude_dbsnp_nonsomatic \
-    --assay WES \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures \
     --tmb_algorithm nonsyn \
@@ -979,7 +881,6 @@ workflow SUB_DNA_TUMOR_NORMAL {
    // sequenza_R_output(sequenza.out)
     sequenza_conda(tumorNormal_bam_ch)
     sequenza_R_output_conda(sequenza_conda.out)
-    pcgr_v103(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     emit:    
     mutect2_out=mutect2.out.mutect2_vcf
