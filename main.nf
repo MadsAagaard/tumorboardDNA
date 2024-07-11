@@ -146,6 +146,7 @@ channel.fromPath(params.samplesheet)
     .map { row -> tuple(row[2], row[0])}
     .set { tumorID_caseID }
 
+tumorID_caseID.view()
 //above: tumor sampleID (NPN), caseID
 
 channel.fromPath(params.samplesheet)
@@ -192,7 +193,7 @@ fastq_final.view()
 if (!params.cram && !params.fastq && params.fastqInput) {
     params.reads="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
 }
-
+/*
 if (!params.cram && (params.fastqInput || params.fastq)) {
     channel
     .fromFilePairs(params.reads, checkIfExists: true)
@@ -218,18 +219,9 @@ if (!params.cram && (params.fastqInput || params.fastq)) {
     //case_fastq_input_ch.view()
 
 }
-
+*/
 ////////////////// INPUT DATA (CRAM) CHANNELS ///////////////////
 
-if (!params.cram && !params.fastqInput && !params.fastq) {
-    cramfiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{EV8}*.cram"
-    craifiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{EV8}*.crai"
-}
-
-if (params.cram ) {
-    cramfiles="${params.cram}/*{_,-}{EV8}*.cram"
-    craifiles="${params.cram}/*{_,-}{EV8}*.crai"
-}
 
 if (!params.fastqInput && !params.fastq) {
     Channel
