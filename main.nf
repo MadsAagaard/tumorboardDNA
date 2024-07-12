@@ -166,7 +166,7 @@ channel.fromPath(params.samplesheet)
 ////////////////// INPUT DATA (FASTQ) CHANNELS ///////////////////
 if (params.fastq) {
     params.reads = "${params.fastq}/*{fq,fastq}.gz"
-
+/*
     Channel
     .fromPath(params.reads, followLinks: true)
     .map { tuple(it.baseName.tokenize('-').get(0)+"_"+it.baseName.tokenize('-').get(1),it) }
@@ -177,6 +177,19 @@ if (params.fastq) {
     Channel
     .fromPath(params.reads, followLinks: true)
     .map { tuple(it.baseName.tokenize('-').get(0)+"_"+it.baseName.tokenize('-').get(1),it) }
+    .filter {it =~ /_R2/}
+    .set {fastq_inputR2}
+*/
+    Channel
+    .fromPath(params.reads, followLinks: true)
+    .map { tuple(it.baseName.tokenize('-').get(0),it) }
+    .filter {it =~ /_R1/}
+    .set {fastq_inputR1}
+
+
+    Channel
+    .fromPath(params.reads, followLinks: true)
+    .map { tuple(it.baseName.tokenize('-').get(0),it) }
     .filter {it =~ /_R2/}
     .set {fastq_inputR2}
 
