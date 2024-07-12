@@ -209,9 +209,6 @@ if (params.fastq) {
 
     NN1.concat(CF1)
     .set { case_fastq_input_ch }
-
-    case_fastq_input_ch.view()
-
 }
 
 
