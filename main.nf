@@ -140,7 +140,7 @@ channel.fromPath(params.samplesheet)
     .map { row -> tuple(row[1], row[0])}
     .set { normalID_caseID }
 //above: Normal sampleID (NPN), caseID
-normalID_caseID.view()
+
 channel.fromPath(params.samplesheet)
     .splitCsv(sep:'\t')
     .map { row -> tuple(row[2], row[0])}
@@ -198,7 +198,7 @@ if (params.fastq) {
     fastq_inputR1.join(fastq_inputR2)
     .set { fastq_final }
 
-fastq_final.view()
+
     normalID_caseID.join(fastq_final)
     .map {tuple(it[1],it[0],it[2],it[3],"NORMAL")}
     .set { NN1 }
