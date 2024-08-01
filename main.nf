@@ -215,12 +215,12 @@ if (params.cram ) {
 if (!params.fastqInput) {
     Channel
     .fromPath(cramfiles)
-    .map { tuple(it.baseName.tokenize('_').get(0),it) }
+    .map { tuple(it.baseName.tokenize('.').get(0),it) }
     .set { sampleID_cram }
     // above: sampleID, sampleCRAM
     Channel
     .fromPath(craifiles)
-    .map { tuple(it.baseName.tokenize('_').get(0),it) }
+    .map { tuple(it.baseName.tokenize('.').get(0),it) }
     .set { sampleID_crai }
     // above: sampleID, sampleCRAI
 sampleID_cram.view()
