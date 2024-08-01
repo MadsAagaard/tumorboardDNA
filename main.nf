@@ -240,7 +240,7 @@ if (!params.fastqInput) {
     cram_normal.concat(cram_tumor)
     .set { case_npn_cram_crai_ch }
     // caseID, NPN, CRAM, CRAI
-
+case_npn_cram_crai_ch.view()
      case_npn_cram_crai_ch
     .filter{it =~ /NORMAL/}
     .set { normals_ch }
@@ -254,7 +254,7 @@ if (!params.fastqInput) {
     .set { tumorNormal_cram_ch } 
 
 }
-tumorNormal_cram_ch.view()
+
 
 log.info """\
 
