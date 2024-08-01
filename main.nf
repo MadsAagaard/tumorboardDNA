@@ -184,7 +184,6 @@ if (params.fastq) {
     Channel
     fastq_inputR1.join(fastq_inputR2)
     .set { fastq_final }
-fastq_final.view()
 
     normalID_caseID.join(fastq_final)
     .map {tuple(it[1],it[0],it[2],it[3],"NORMAL")}
