@@ -208,19 +208,19 @@ if (!params.cram && !params.fastqInput && !params.fastq) {
 }
 
 if (params.cram ) {
-    cramfiles="${params.cram}/*{_,-}{EV8,WT,tumor}*.cram"
-    craifiles="${params.cram}/*{_,-}{EV8,WT,tumor}*.crai"
+    cramfiles="${params.cram}/*{_,-}{EV8}*.cram"
+    craifiles="${params.cram}/*{_,-}{EV8}*.crai"
 }
 
 if (!params.fastqInput&&!params.fastq) {
     Channel
     .fromPath(cramfiles)
-    .map { tuple(it.baseName.tokenize('.').get(0),it) }
+    .map { tuple(it.baseName.tokenize('_').get(0),it) }
     .set { sampleID_cram }
     // above: sampleID, sampleCRAM
     Channel
     .fromPath(craifiles)
-    .map { tuple(it.baseName.tokenize('.').get(0),it) }
+    .map { tuple(it.baseName.tokenize('_').get(0),it) }
     .set { sampleID_crai }
     // above: sampleID, sampleCRAI
 
