@@ -186,7 +186,7 @@ if (!params.cram && params.fastqInput) {
     .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"NORMAL")}
     .set { NN1 }
     //above: caseid, NPN_sampletype(NORMAL), normal R1, normal R2
-
+normalID_caseID.view()
     tumorID_caseID
     .join(read_pairs_ch)
     .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"TUMOR")}
