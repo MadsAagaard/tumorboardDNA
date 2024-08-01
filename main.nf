@@ -212,7 +212,7 @@ if (params.cram ) {
     craifiles="${params.cram}/*{_,-}{EV8,WT,tumor}*.crai"
 }
 
-if (!params.fastqInput) {
+if (!params.fastqInput&&!params.fastq) {
     Channel
     .fromPath(cramfiles)
     .map { tuple(it.baseName.tokenize('.').get(0),it) }
