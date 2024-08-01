@@ -208,8 +208,8 @@ if (!params.cram && !params.fastqInput && !params.fastq) {
 }
 
 if (params.cram ) {
-    cramfiles="${params.cram}/*{_,-}{EV8}*.cram"
-    craifiles="${params.cram}/*{_,-}{EV8}*.crai"
+    cramfiles="${params.cram}/*{_,-}{EV8,WT,tumor}*.cram"
+    craifiles="${params.cram}/*{_,-}{EV8,WT,tumor}*.crai"
 }
 
 if (!params.fastqInput) {
