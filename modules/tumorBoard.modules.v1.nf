@@ -882,37 +882,6 @@ process pcgr_v141 {
     """
 }
 
-process pcgr_v141 {
-    tag "$caseID"
-    errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR141/", mode: 'copy', pattern: "*.pcgr_acmg.*"
-    //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
-    input:
-    tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
-
-    output:
-    path("*.pcgr_acmg.*")
-    
-    script:
-    //tumorsite=${pcgr_tumor} ? "--tumor_site ${pcgr_tumor}" : ""
-    """
-    singularity run -B ${s_bind} ${simgpath}/pcgr141.sif pcgr \
-    --input_vcf ${vcf} \
-    --pcgr_dir ${pcgr_data_dir} --output_dir . \
-    --genome_assembly ${pcgr_assembly} \
-    --sample_id ${caseID}_TMB_all \
-    --min_mutations_signatures 100 \
-    --all_reference_signatures \
-    --estimate_tmb --estimate_msi_status \
-    --exclude_dbsnp_nonsomatic \
-    --assay WES \
-    --tumor_site ${pcgr_tumor} \
-    --estimate_signatures \
-    --include_trials
-"""
-
-
-}
 
 
 /////////// SUBWORKFLOWS
