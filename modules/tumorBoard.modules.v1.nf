@@ -836,55 +836,6 @@ process sequenza_R_output_conda {
 }
 
 
-process pcgr_v103 {
-    tag "$caseID"
-    errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR/", mode: 'copy', pattern: "*.pcgr_acmg.*"
-    publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
-    input:
-    tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
-
-    output:
-    path("*.pcgr_acmg.*")
-
-    script:
-    //tumorsite=${pcgr_tumor} ? "--tumor_site ${pcgr_tumor}" : ""
-    """
-    singularity run -B ${s_bind} ${simgpath}/pcgr103.sif pcgr \
-    --input_vcf ${vcf} \
-    --pcgr_dir ${pcgr_data_dir} --output_dir . \
-    --genome_assembly ${pcgr_assembly} \
-    --sample_id ${caseID}_TMB_all \
-    --min_mutations_signatures 100 \
-    --all_reference_signatures \
-    --estimate_tmb --estimate_msi_status \
-    --no_docker \
-    --exclude_dbsnp_nonsomatic \
-    --assay WES \
-    --tumor_site ${pcgr_tumor} \
-    --estimate_signatures \
-    --include_trials
-
-
-    singularity run -B ${s_bind} ${simgpath}/pcgr103.sif pcgr \
-    --input_vcf ${vcf} \
-    --pcgr_dir ${pcgr_data_dir} --output_dir . \
-    --genome_assembly ${pcgr_assembly} \
-    --sample_id ${caseID}_TMB_NonSyn \
-    --min_mutations_signatures 100 \
-    --all_reference_signatures \
-    --estimate_tmb --estimate_msi_status \
-    --no_docker \
-    --exclude_dbsnp_nonsomatic \
-    --assay WES \
-    --tumor_site ${pcgr_tumor} \
-    --estimate_signatures \
-    --tmb_algorithm nonsyn \
-    --include_trials
-    """
-}
-
-
 process pcgr_v141 {
     tag "$caseID"
     errorStrategy 'ignore'
@@ -931,6 +882,37 @@ process pcgr_v141 {
     """
 }
 
+process pcgr_v141 {
+    tag "$caseID"
+    errorStrategy 'ignore'
+    publishDir "${caseID}/${outputDir}/PCGR141/", mode: 'copy', pattern: "*.pcgr_acmg.*"
+    //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
+    input:
+    tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
+
+    output:
+    path("*.pcgr_acmg.*")
+    
+    script:
+    //tumorsite=${pcgr_tumor} ? "--tumor_site ${pcgr_tumor}" : ""
+    """
+    singularity run -B ${s_bind} ${simgpath}/pcgr141.sif pcgr \
+    --input_vcf ${vcf} \
+    --pcgr_dir ${pcgr_data_dir} --output_dir . \
+    --genome_assembly ${pcgr_assembly} \
+    --sample_id ${caseID}_TMB_all \
+    --min_mutations_signatures 100 \
+    --all_reference_signatures \
+    --estimate_tmb --estimate_msi_status \
+    --exclude_dbsnp_nonsomatic \
+    --assay WES \
+    --tumor_site ${pcgr_tumor} \
+    --estimate_signatures \
+    --include_trials
+"""
+
+
+}
 
 
 /////////// SUBWORKFLOWS
@@ -979,7 +961,6 @@ workflow SUB_DNA_TUMOR_NORMAL {
    // sequenza_R_output(sequenza.out)
     sequenza_conda(tumorNormal_bam_ch)
     sequenza_R_output_conda(sequenza_conda.out)
-    pcgr_v103(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     emit:    
     mutect2_out=mutect2.out.mutect2_vcf
