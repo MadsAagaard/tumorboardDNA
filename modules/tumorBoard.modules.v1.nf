@@ -140,7 +140,8 @@ switch (params.genome) {
 
 
         pcgr_data_dir="/data/shared/genomes/hg38/program_DBs/PCGR/"
-
+        pcgr_VEP="/data/shared/genomes/hg38/program_DBs/PCGRv2/VEP_112_GRCh38_merged/"
+        pcgr_data_dir2="/data/shared/genomes/hg38/program_DBs/PCGRv2/20240621/"
 
         // Program indexes:
         pcgr_assembly="grch38"
@@ -538,8 +539,8 @@ process tb_haplotypecaller {
 
 process mutect2 {
     tag "$caseID"
-    publishDir "${caseID}/${outputDir}/variantcalls/", mode: 'copy', pattern: "*.{VarSeq.*,PASSonly.*}"
-    publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.for.VarSeq.{vcf,idx}"
+    publishDir "${caseID}/${outputDir}/variantcalls/", mode: 'copy', pattern: "*.{VarSeq,PASSonly}.*"
+    publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.for.VarSeq.*"
 
     publishDir "${caseID}/${outputDir}/variantcalls/mutect2_bamout", mode: 'copy', pattern: "*.bamout.*"
 
@@ -548,10 +549,14 @@ process mutect2 {
     input:
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
     output:
-    tuple val(caseID), val(sampleID_tumor), path("${caseID}.mutect2.PASSonly.vcf.gz"), path("${caseID}.mutect2.PASSonly.vcf.gz.tbi"),emit: mutect2_allPASS 
+
+    tuple val(caseID), path("${caseID}.mutect2.for.VarSeq.vcf.gz"), path("${caseID}.mutect2.for.VarSeq.vcf.gz.tbi"), emit: mutect2_ALL
+
+    tuple val(caseID), val(sampleID_tumor), path("${caseID}.mutect2.PASSonly.vcf.gz"), path("${caseID}.mutect2.PASSonly.vcf.gz.tbi"),emit: mutect2_PASS 
   
-    tuple val(caseID), path("${caseID}.mutect2.tumor.PASSonly.vcf.gz"), path("${caseID}.mutect2.tumor.PASSonly.vcf.gz.tbi"),emit: mutect2_tumorPASS 
-    tuple val(caseID), path("${caseID}.mutect2.for.VarSeq.vcf.gz"), path("${caseID}.mutect2.for.VarSeq.vcf.gz.tbi"), emit: mutect2_vcf
+    tuple val(caseID), path("${caseID}.mutect2.PASSonly.TUMORonly.vcf.gz"), path("${caseID}.mutect2.PASSonly.TUMORonly.vcf.gz.tbi"),emit: mutect2_tumorPASS 
+
+
     
     path("*.{tsv,table,stats}")
     path("*tumor.PASSonly.*")
@@ -605,48 +610,14 @@ process mutect2 {
     ${gatk_exec} SelectVariants -R ${genome_fasta} \
     -V ${caseID}.mutect2.for.VarSeq.vcf.gz \
     --exclude-filtered -xl-sn ${sampleID_normal} --exclude-non-variants \
-    -O ${caseID}.mutect2.tumor.PASSonly.vcf.gz
+    -O ${caseID}.mutect2.PASSonly.TUMORonly.vcf.gz
+
+    java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 ${caseID}.mutect2.PASSonly.vcf.gz > ${caseID}.mutect2.PASSonly.snpeff.vcf
+
+    ${caseID}.mutect2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
+   "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive__inframe_deletion') & (GEN[0].AF>=0.05 & GEN[0].DP>25)" > ${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.vcf
     """
 }
-
-/*
-process strelka2 {
-    errorStrategy 'ignore'
-    tag "$caseID"
-    publishDir "${caseID}/${outputDir}/variantcalls/strelka2", mode: 'copy'
-    cpus 10
-
-    input: 
-    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
-
-    output:
-    path("*.strelka2.*")
-    
-    script:
-    """
-    singularity run -B ${s_bind} ${simgpath}/strelka2_2.9.10.sif /tools/strelka2/bin/configureStrelkaSomaticWorkflow.py \
-    --normalBam ${bamN} \
-    --tumorBam ${bamT} \
-    --referenceFasta  ${genome_fasta} \
-    --exome \
-    --runDir strelka
-
-    singularity run -B ${s_bind} ${simgpath}/strelka2_2.9.10.sif python2 strelka/runWorkflow.py \
-    -j ${task.cpus} \
-    -m local
-
-    mv strelka/results/variants/somatic.indels.vcf.gz ${caseID}.strelka2.somatic.indels.vcf.gz
-    mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${caseID}.strelka2.somatic.indels.vcf.gz.tbi
-    mv strelka/results/variants/somatic.snvs.vcf.gz ${caseID}.strelka2.somatic.snvs.vcf.gz
-    mv strelka/results/variants/somatic.snvs.vcf.gz.tbi ${caseID}.strelka2.somatic.snvs.vcf.gz.tbi
-
-    ${gatk_exec} MergeVcfs \
-    -I ${caseID}.strelka2.somatic.indels.vcf.gz \
-    -I ${caseID}.strelka2.somatic.snvs.vcf.gz \
-    -O ${caseID}.strelka2.merged.vcf 
-    """
-}
-*/
 
 
 
@@ -695,7 +666,7 @@ process strelka2 {
 
 
 
-process strelka2_rename {
+process strelka2_edits {
     errorStrategy 'ignore'
     tag "$caseID"
     publishDir "${caseID}/${outputDir}/variantcalls/strelka2", mode: 'copy'
@@ -704,10 +675,12 @@ process strelka2_rename {
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN), val(typeN), val(sampleID_tumor),path(bamT), path(baiT), val(typeT), path(strelkavcf)
 
-
     output:
-    tuple val(caseID), path("${caseID}.strelka.rename.vaf.vcf.gz"),path("${caseID}.strelka.rename.vaf.vcf.gz.tbi")// into rnaSS1    
-
+    tuple val(caseID), path("${caseID}.strelka.for.VarSeq.gz"),path("${caseID}.strelka.for.VarSeq.gz.tbi"),emit: strelka2_ALL    
+    tuple val(caseID), path("${caseID}.strelka.PASSonly.vcf.gz"),path("${caseID}.strelka.PASSonly.vcf.gz.tbi"), emit: strelka2_PASS 
+    tuple val(caseID), path("{caseID}.strelka.PASSonly.TUMORonly.vcf.gz"),path("{caseID}.strelka.PASSonly.TUMORonly.vcf.gz.tbi"), emit: strelka2_TUMOR_PASS
+    tuple val(caseID), path("${caseID}.strelka.PASSonly.snpeff.vcf"), emit: strelka2_PASS_snpeff
+    tuple val(caseID), path("${caseID}.strelka.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.vcf"), emit: strelka2_PASS_TMB_filtered
 
     shell:
     '''
@@ -716,14 +689,29 @@ process strelka2_rename {
 
     bcftools reheader \
     --samples !{caseID}.strelka_rename.txt \
-    -o !{caseID}.strelka.rename.vaf.vcf.gz !{strelkavcf}
+    -o !{caseID}.strelka.for.VarSeq.gz !{strelkavcf}
 
-    bcftools index -t !{caseID}.strelka.rename.vaf.vcf.gz
+    bcftools index -t !{caseID}.strelka.for.VarSeq.gz
+    
+    !{gatk_exec} SelectVariants -R !{genome_fasta} \
+    -V !{caseID}.strelka.for.VarSeq.gz \
+    --exclude-filtered \
+    -O !{caseID}.strelka.PASSonly.vcf.gz
+
+    !{gatk_exec} SelectVariants -R !{genome_fasta} \
+    -V !{caseID}.strelka.for.VarSeq.gz \
+    --exclude-filtered -xl-sn !{sampleID_normal} --exclude-non-variants \
+    -O !{caseID}.strelka.PASSonly.TUMORonly.vcf.gz
+
+    java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 !{caseID}.strelka.PASSonly.vcf.gz > !{caseID}.strelka.PASSonly.snpeff.vcf
+
+    !{caseID}.strelka.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
+    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive__inframe_deletion') & (GEN[0].VAF >=0.05 & GEN[0].DP>25)" > !{caseID}.strelka.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.vcf
+
+
     '''
 }
 
-/*
-*/
 
 process msisensor {
     errorStrategy 'ignore'
@@ -746,51 +734,7 @@ process msisensor {
     -o ${caseID}_msi
     """
 }
-/*
-process sequenza {
-    errorStrategy 'ignore'
-    tag "$caseID"
-    
-    input:
-    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
-    output:
-    tuple val(caseID), path("${caseID}.seqz.final.gz") 
 
-    script:
-    """
-    sequenza-utils bam2seqz -n ${bamN} -t ${bamT} \
-    --fasta ${genome_fasta} \
-    -gc ${sequenza_cg50_wig} \
-    -o ${caseID}.seqz.phase1.gz
-    sequenza-utils seqz_binning --seqz ${caseID}.seqz.phase1.gz \
-    -w 50 -o ${caseID}.seqz.final.gz 
-    """
-}
-
-process sequenza_R_output {
-    errorStrategy 'ignore'
-    tag "$caseID"
-    publishDir "${caseID}/${params.outdir}/", mode: 'copy'
-    publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*_{segments,alternative_fit,genome_view}.{txt,pdf}"
-    input:
-    tuple val(caseID),  path(seqz)
-
-    output:
-    path("sequenza/*")
-
-
-    script:
-    """
-    #!/usr/bin/env Rscript
-    library(readr)
-    readr::local_edition(1)
-    library(sequenza)
-    t1 = sequenza.extract("${seqz}",verbose=F)
-    cp = sequenza.fit(t1)
-    sequenza.results(sequenza.extract = t1, cp.table = cp, sample.id = "${caseID}", out.dir = "sequenza" )
-    """
-}
-*/
 process sequenza_conda {
     errorStrategy 'ignore'
     tag "$caseID"
@@ -882,7 +826,78 @@ process pcgr_v141 {
     """
 }
 
+process pcgr_v203_mutect2 {
+    errorStrategy 'ignore'
+    publishDir "${caseID}/${outputDir}/PCGR203_mutect2/", mode: 'copy', pattern: "*.pcgr.*"
+    //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
+   
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
+   
+    input:
+    tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
 
+    output:
+    path("*.pcgr.*")
+    
+    script:
+    //tumorsite=${params.pcgrtumor} ? "--tumor_site ${pcgr_tumor}" : ""
+    """
+    bcftools index -t ${vcf}
+
+    pcgr \
+    --input_vcf ${vcf} \
+    --refdata_dir  ${pcgr_data_dir2} \
+    --output_dir . \
+    --vep_dir ${pcgr_VEP} \
+    --genome_assembly ${grch_assembly} \
+    --sample_id ${caseID}_TMB_missense \
+    --min_mutations_signatures 100 \
+    --all_reference_signatures \
+    --estimate_tmb \
+    --tmb_display missense_only \
+    --estimate_msi \
+    --exclude_dbsnp_nonsomatic \
+    --assay WGS \
+    --tumor_site ${pcgr_tumor} \
+    --estimate_signatures \
+    """
+}
+process pcgr_v203_strelka2 {
+    errorStrategy 'ignore'
+    publishDir "${caseID}/${outputDir}/PCGR203_strelka/", mode: 'copy', pattern: "*.pcgr.*"
+    //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
+   
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
+   
+    input:
+    tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
+
+    output:
+    path("*.pcgr.*")
+    
+    script:
+    //tumorsite=${params.pcgrtumor} ? "--tumor_site ${pcgr_tumor}" : ""
+    """
+    bcftools index -t ${vcf}
+
+    pcgr \
+    --input_vcf ${vcf} \
+    --refdata_dir  ${pcgr_data_dir2} \
+    --output_dir . \
+    --vep_dir ${pcgr_VEP} \
+    --genome_assembly ${grch_assembly} \
+    --sample_id ${caseID}_TMB_missense \
+    --min_mutations_signatures 100 \
+    --all_reference_signatures \
+    --estimate_tmb \
+    --tmb_display missense_only \
+    --estimate_msi \
+    --exclude_dbsnp_nonsomatic \
+    --assay WGS \
+    --tumor_site ${pcgr_tumor} \
+    --estimate_signatures \
+    """
+}
 
 /////////// SUBWORKFLOWS
 
@@ -931,7 +946,9 @@ workflow SUB_DNA_TUMOR_NORMAL {
     sequenza_conda(tumorNormal_bam_ch)
     sequenza_R_output_conda(sequenza_conda.out)
     pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
+    pcgr_v203_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
+    pcgr_v203_strelka2(strelka2_edits.out.strelka2_PASS.join(caseID_pcgrID))
     emit:    
-    mutect2_out=mutect2.out.mutect2_vcf
+    mutect2_out=mutect2.out.mutect2_ALL
 
 }

@@ -40,10 +40,6 @@ switch (params.server) {
      //   modules_dir="/home/mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules";
         dataArchive="/lnx01_data2/shared/dataArchive";        
     break;
-    case 'kga01':
-      //  modules_dir="/home/mmaj/LNX01_mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules";
-        dataArchive="/data/shared/dataArchive";
-    break;
 }
 
 
@@ -165,96 +161,130 @@ channel.fromPath(params.samplesheet)
 
 ////////////////// INPUT DATA (FASTQ) CHANNELS ///////////////////
 
-if (params.fastq) {
-    params.reads = "${params.fastq}/**{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
-}
+if (params.fastqNGC) {
+    params.reads = "${params.fastq}/*{fq,fastq}.gz"
+
+    Channel
+    .fromPath(params.reads, followLinks: true)
+    .map { tuple(it.baseName.tokenize('-').get(0)+"_"+it.baseName.tokenize('-').get(1),it) }
+    .filter {it =~ /_R1/}
+    .set {fastq_inputR1}
 
 
-if (!params.cram && !params.fastq && params.fastqInput) {
-    params.reads="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
-}
+    Channel
+    .fromPath(params.reads, followLinks: true)
+    .map { tuple(it.baseName.tokenize('-').get(0)+"_"+it.baseName.tokenize('-').get(1),it) }
+    .filter {it =~ /_R2/}
+    .set {fastq_inputR2}
 
-if (!params.cram && (params.fastqInput ||params.fastq)) {
-    channel
-    .fromFilePairs(params.reads, checkIfExists: true)
-    .ifEmpty { error "Cannot find any reads matching: ${params.reads}" }
-    .map { it -> [it[0], file(it[1][0]),file(it[1][1])] }
-    .set { read_pairs_ch }
-    // above sampleID, r1, r2
-    normalID_caseID
-    .join(read_pairs_ch)
-    .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"NORMAL")}
+    Channel
+    fastq_inputR1.join(fastq_inputR2)
+    .set { fastq_final }
+
+    normalID_caseID.join(fastq_final)
+    .map {tuple(it[1],it[0],it[2],it[3],"NORMAL")}
     .set { NN1 }
-    //above: caseid, NPN_sampletype(NORMAL), normal R1, normal R2
 
-    tumorID_caseID
-    .join(read_pairs_ch)
-    .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"TUMOR")}
+    tumorID_caseID.join(fastq_final)
+    .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
     .set { CF1 }
-    //above: caseid, sampleID, ,R1, R2, type
 
     NN1.concat(CF1)
     .set { case_fastq_input_ch }
-    //above: NN2 and CF2 in the same channel (same structure as NN2 and CF2)
-    //case_fastq_input_ch.view()
-
 }
 
-////////////////// INPUT DATA (CRAM) CHANNELS ///////////////////
 
-if (!params.cram && !params.fastqInput && !params.fastq) {
-    cramfiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{EV8}*.cram"
-    craifiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{EV8}*.crai"
+if (!params.fastqNGC) {
+
+    if (params.fastq) {
+        params.reads = "${params.fastq}/**{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
+    }
+
+
+    if (!params.cram && !params.fastq && params.fastqInput) {
+        params.reads="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
+    }
+
+    if (!params.cram && (params.fastqInput ||params.fastq)) {
+        channel
+        .fromFilePairs(params.reads, checkIfExists: true)
+        .ifEmpty { error "Cannot find any reads matching: ${params.reads}" }
+        .map { it -> [it[0], file(it[1][0]),file(it[1][1])] }
+        .set { read_pairs_ch }
+        // above sampleID, r1, r2
+        normalID_caseID
+        .join(read_pairs_ch)
+        .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"NORMAL")}
+        .set { NN1 }
+        //above: caseid, NPN_sampletype(NORMAL), normal R1, normal R2
+
+        tumorID_caseID
+        .join(read_pairs_ch)
+        .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"TUMOR")}
+        .set { CF1 }
+        //above: caseid, sampleID, ,R1, R2, type
+
+        NN1.concat(CF1)
+        .set { case_fastq_input_ch }
+        //above: NN2 and CF2 in the same channel (same structure as NN2 and CF2)
+        //case_fastq_input_ch.view()
+
+    }
+
+    ////////////////// INPUT DATA (CRAM) CHANNELS ///////////////////
+
+    if (!params.cram && !params.fastqInput && !params.fastq) {
+        cramfiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{EV8}*.cram"
+        craifiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{EV8}*.crai"
+    }
+
+    if (params.cram ) {
+        cramfiles="${params.cram}/*{_,-}{EV8}*.cram"
+        craifiles="${params.cram}/*{_,-}{EV8}*.crai"
+    }
+
+    if (!params.fastqInput && !params.fastq) {
+        Channel
+        .fromPath(cramfiles)
+        .map { tuple(it.baseName.tokenize('_').get(0),it) }
+        .set { sampleID_cram }
+        // above: sampleID, sampleCRAM
+        Channel
+        .fromPath(craifiles)
+        .map { tuple(it.baseName.tokenize('_').get(0),it) }
+        .set { sampleID_crai }
+        // above: sampleID, sampleCRAI
+
+        // Join with samplesheet:
+        normalID_caseID // sampleID normal, caseID
+        .join(sampleID_cram).join(sampleID_crai)
+        .map {tuple(it[1],it[0]+"_EV8", it[2],it[3],"NORMAL")}
+        .set { cram_normal }
+        //above structure: caseID, NPN_EV8, CRAM, CRAI, NORMAL
+        
+        tumorID_caseID
+        .join(sampleID_cram).join(sampleID_crai)
+        .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"TUMOR")}
+        .set { cram_tumor }
+        //above structure: caseID, NPN_EV8, CRAM, CRAI, TUMOR
+        
+        cram_normal.concat(cram_tumor)
+        .set { case_npn_cram_crai_ch }
+        // caseID, NPN, CRAM, CRAI
+    case_npn_cram_crai_ch.view()
+        case_npn_cram_crai_ch
+        .filter{it =~ /NORMAL/}
+        .set { normals_ch }
+
+        case_npn_cram_crai_ch 
+        .filter{it =~ /TUMOR/}
+        .set { tumor_ch }
+        
+        normals_ch
+        .join(tumor_ch)
+        .set { tumorNormal_cram_ch } 
+    }
 }
-
-if (params.cram ) {
-    cramfiles="${params.cram}/*{_,-}{EV8}*.cram"
-    craifiles="${params.cram}/*{_,-}{EV8}*.crai"
-}
-
-if (!params.fastqInput && !params.fastq) {
-    Channel
-    .fromPath(cramfiles)
-    .map { tuple(it.baseName.tokenize('_').get(0),it) }
-    .set { sampleID_cram }
-    // above: sampleID, sampleCRAM
-    Channel
-    .fromPath(craifiles)
-    .map { tuple(it.baseName.tokenize('_').get(0),it) }
-    .set { sampleID_crai }
-    // above: sampleID, sampleCRAI
-
-    // Join with samplesheet:
-    normalID_caseID // sampleID normal, caseID
-    .join(sampleID_cram).join(sampleID_crai)
-    .map {tuple(it[1],it[0]+"_EV8", it[2],it[3],"NORMAL")}
-    .set { cram_normal }
-    //above structure: caseID, NPN_EV8, CRAM, CRAI, NORMAL
-    
-    tumorID_caseID
-    .join(sampleID_cram).join(sampleID_crai)
-    .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"TUMOR")}
-    .set { cram_tumor }
-    //above structure: caseID, NPN_EV8, CRAM, CRAI, TUMOR
-    
-    cram_normal.concat(cram_tumor)
-    .set { case_npn_cram_crai_ch }
-    // caseID, NPN, CRAM, CRAI
-case_npn_cram_crai_ch.view()
-     case_npn_cram_crai_ch
-    .filter{it =~ /NORMAL/}
-    .set { normals_ch }
-
-    case_npn_cram_crai_ch 
-    .filter{it =~ /TUMOR/}
-    .set { tumor_ch }
-    
-    normals_ch
-    .join(tumor_ch)
-    .set { tumorNormal_cram_ch } 
-
-}
-
 
 log.info """\
 
@@ -282,7 +312,7 @@ include {
          SUB_DNA_TUMOR_NORMAL } from "./modules/tumorBoard.modules.v1.nf" 
 
 
-
+/*
 workflow DNA_TUMOR_NORMAL {
     take:
     tumorNormal_bam_ch
@@ -297,11 +327,11 @@ workflow DNA_TUMOR_NORMAL {
     mutect2_out=mutect2.out.mutect2_vcf
 
 }
-
+*/
 
 
 workflow {
-    if (params.fastqInput || params.fastq) {
+    if (params.fastqInput || params.fastq||params.fastqNGC) {
 
         SUB_DNA_PREPROCESS(case_fastq_input_ch)
         
@@ -352,7 +382,7 @@ workflow {
     }
 }
 
-
+/*
 workflow.onComplete {
     // Read samplesheet and determine format
     def samplesheetLines = new File(params.samplesheet).readLines()
@@ -401,3 +431,4 @@ workflow.onComplete {
         "rm -rf ${workflow.workDir}".execute()
     }
 }
+*/
