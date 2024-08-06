@@ -162,7 +162,7 @@ channel.fromPath(params.samplesheet)
 ////////////////// INPUT DATA (FASTQ) CHANNELS ///////////////////
 
 if (params.fastqNGC) {
-    params.reads = "${params.fastq}/*{fq,fastq}.gz"
+    params.reads = "${params.fastqNGC}/*{fq,fastq}.gz"
 
     Channel
     .fromPath(params.reads, followLinks: true)
