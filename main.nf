@@ -208,7 +208,7 @@ if (params.cramNGC) {
         .map { tuple(it.baseName.tokenize('.').get(0),it) }
         .set { sampleID_crai }
         // above: sampleID, sampleCRAI
-
+sampleID_cram.view()
         // Join with samplesheet:
         normalID_caseID // sampleID normal, caseID
         .join(sampleID_cram).join(sampleID_crai)
