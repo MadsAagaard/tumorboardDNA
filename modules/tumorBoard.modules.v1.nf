@@ -192,10 +192,13 @@ switch (params.panel) {
 }
 
 if (params.wgs) {
-
-
-
+    assaytype="--assay WGS"
 }
+
+if (!params.wgs) {
+    assaytype="--assay WES"
+}
+
 
 if (!params.archiveStorage) {
 outputDir="${params.outdir}/"
@@ -846,7 +849,6 @@ process pcgr_v203_mutect2 {
     path("*.pcgr.*")
     
     script:
-    assayType=${params.wgs} ? "--assay WGS" : "--assay WES"
     """
     bcftools index -t ${vcf}
 
@@ -863,7 +865,7 @@ process pcgr_v203_mutect2 {
     --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
-    $assayType \
+    $assaytype \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures
     """
@@ -883,7 +885,6 @@ process pcgr_v203_strelka2 {
     path("*.pcgr.*")
     
     script:
-    assayType=${params.wgs} ? "--assay WGS" : "--assay WES"
     """
     bcftools index -t ${vcf}
 
@@ -900,7 +901,7 @@ process pcgr_v203_strelka2 {
     --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
-    $assayType \
+    $assaytype \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures
     """
