@@ -75,6 +75,8 @@ switch (params.genome) {
     case 'hg38':
         assembly="hg38"
         smncaller_assembly="38"
+        grch_assembly="grch38"
+        pcgr_assembly="grch38"
         // Genome assembly files:
         if (params.hg38v1) {
         genome_fasta = "/data/shared/genomes/hg38/GRCh38.primary.fa"
@@ -144,7 +146,7 @@ switch (params.genome) {
         pcgr_data_dir2="/data/shared/genomes/hg38/program_DBs/PCGRv2/20240621/"
 
         // Program indexes:
-        pcgr_assembly="grch38"
+        
         sequenza_cg50_wig="/data/shared/genomes/hg38/program_DBs/sequenza/GRCh38.primary.cg50.sequenza.wig.gz"
 
 
@@ -857,7 +859,7 @@ process pcgr_v203_mutect2 {
     --refdata_dir  ${pcgr_data_dir2} \
     --output_dir . \
     --vep_dir ${pcgr_VEP} \
-    --genome_assembly ${grch_assembly} \
+    --genome_assembly ${pcgr_assembly} \
     --sample_id ${caseID}_TMB_missense \
     --min_mutations_signatures 100 \
     --all_reference_signatures \
@@ -893,7 +895,7 @@ process pcgr_v203_strelka2 {
     --refdata_dir  ${pcgr_data_dir2} \
     --output_dir . \
     --vep_dir ${pcgr_VEP} \
-    --genome_assembly ${grch_assembly} \
+    --genome_assembly ${pcgr_assembly} \
     --sample_id ${caseID}_TMB_missense \
     --min_mutations_signatures 100 \
     --all_reference_signatures \
