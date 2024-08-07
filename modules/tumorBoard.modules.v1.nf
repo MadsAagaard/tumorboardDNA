@@ -672,12 +672,19 @@ process strelka2_edits {
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN), val(typeN), val(sampleID_tumor),path(bamT), path(baiT), val(typeT), path(strelkavcf)
 
     output:
-    tuple val(caseID), path("${caseID}.strelka.for.VarSeq.gz"),path("${caseID}.strelka.for.VarSeq.gz.tbi"),emit: strelka2_ALL    
-    tuple val(caseID), path("${caseID}.strelka.PASSonly.vcf.gz"),path("${caseID}.strelka.PASSonly.vcf.gz.tbi"), emit: strelka2_PASS 
-    tuple val(caseID), path("{caseID}.strelka.PASSonly.TUMORonly.vcf.gz"),path("{caseID}.strelka.PASSonly.TUMORonly.vcf.gz.tbi"), emit: strelka2_TUMOR_PASS
-    tuple val(caseID), path("${caseID}.strelka.PASSonly.snpeff.vcf"), emit: strelka2_PASS_snpeff
-    tuple val(caseID), path("${caseID}.strelka.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.vcf"), emit: strelka2_PASS_TMB_filtered
+    
+    tuple val(caseID), path("${caseID}.strelka2.for.VarSeq.gz"),path("${caseID}.strelka2.for.VarSeq.gz.tbi"),emit: strelka2_ALL    
+    
+    tuple val(caseID), path("${caseID}.strelka2.PASSonly.vcf.gz"),path("${caseID}.strelka2.PASSonly.vcf.gz.tbi"), emit: strelka2_PASS 
+    
+    tuple val(caseID), path("{caseID}.strelka2.PASSonly.TUMORonly.vcf.gz"),path("{caseID}.strelka2.PASSonly.TUMORonly.vcf.gz.tbi"), emit: strelka2_TUMOR_PASS
 
+    tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpeff.vcf"), emit: strelka2_PASS_snpeff
+    
+    tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.vcf"), emit: strelka2_PASS_TMB_filtered
+
+    path("*.strelka2.*")
+    
     shell:
     '''
     printf "TUMOR !{sampleID_tumor}_TUMOR" >> !{caseID}.strelka_rename.txt
@@ -685,24 +692,24 @@ process strelka2_edits {
 
     bcftools reheader \
     --samples !{caseID}.strelka_rename.txt \
-    -o !{caseID}.strelka.for.VarSeq.gz !{strelkavcf}
+    -o !{caseID}.strelka2.for.VarSeq.gz !{strelkavcf}
 
-    bcftools index -t !{caseID}.strelka.for.VarSeq.gz
+    bcftools index -t !{caseID}.strelka2.for.VarSeq.gz
     
     !{gatk_exec} SelectVariants -R !{genome_fasta} \
-    -V !{caseID}.strelka.for.VarSeq.gz \
+    -V !{caseID}.strelka2.for.VarSeq.gz \
     --exclude-filtered \
-    -O !{caseID}.strelka.PASSonly.vcf.gz
+    -O !{caseID}.strelka2.PASSonly.vcf.gz
 
     !{gatk_exec} SelectVariants -R !{genome_fasta} \
-    -V !{caseID}.strelka.for.VarSeq.gz \
+    -V !{caseID}.strelka2.for.VarSeq.gz \
     --exclude-filtered -xl-sn !{sampleID_normal} --exclude-non-variants \
-    -O !{caseID}.strelka.PASSonly.TUMORonly.vcf.gz
+    -O !{caseID}.strelka2.PASSonly.TUMORonly.vcf.gz
 
-    java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 !{caseID}.strelka.PASSonly.vcf.gz > !{caseID}.strelka.PASSonly.snpeff.vcf
+    java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 !{caseID}.strelka2.PASSonly.vcf.gz > !{caseID}.strelka2.PASSonly.snpeff.vcf
 
-    cat !{caseID}.strelka.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
-    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive__inframe_deletion') & (GEN[0].VAF >=0.05 & GEN[0].DP>25)" > !{caseID}.strelka.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.vcf
+    cat !{caseID}.strelka2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
+    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive__inframe_deletion') & (GEN[0].VAF >=0.05 & GEN[0].DP>25)" > !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.vcf
     '''
 }
 
