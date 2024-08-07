@@ -25,7 +25,11 @@ params.skipQC                           =null
 params.archiveStorage                   =null
 params.keepwork                         =null
 params.nomail                           =null
+params.wgs                              =null
 params.gatk                             ="new"
+params.fastqNGC                         =null
+params.cramNGC                          =null
+
 //outdir_full_path= "${launchDir}/${params.outdir}/"
 
 runtype = "TN_WES"
