@@ -841,7 +841,7 @@ process pcgr_v203_mutect2 {
     path("*.pcgr.*")
     
     script:
-    //tumorsite=${params.pcgrtumor} ? "--tumor_site ${pcgr_tumor}" : ""
+    assayType=${params.wgs} ? "--assay WGS" : "--assay WES"
     """
     bcftools index -t ${vcf}
 
@@ -858,11 +858,12 @@ process pcgr_v203_mutect2 {
     --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
-    --assay WGS \
+    $assayType \
     --tumor_site ${pcgr_tumor} \
-    --estimate_signatures \
+    --estimate_signatures
     """
 }
+
 process pcgr_v203_strelka2 {
     errorStrategy 'ignore'
     publishDir "${caseID}/${outputDir}/PCGR203_strelka/", mode: 'copy', pattern: "*.pcgr.*"
@@ -877,7 +878,7 @@ process pcgr_v203_strelka2 {
     path("*.pcgr.*")
     
     script:
-    //tumorsite=${params.pcgrtumor} ? "--tumor_site ${pcgr_tumor}" : ""
+    assayType=${params.wgs} ? "--assay WGS" : "--assay WES"
     """
     bcftools index -t ${vcf}
 
@@ -894,9 +895,9 @@ process pcgr_v203_strelka2 {
     --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
-    --assay WGS \
+    --assay WES \
     --tumor_site ${pcgr_tumor} \
-    --estimate_signatures \
+    --estimate_signatures
     """
 }
 
