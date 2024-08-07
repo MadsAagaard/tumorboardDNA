@@ -221,7 +221,7 @@ if (params.cramNGC) {
         .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
         .set { cram_tumor }
         //above structure: caseID, NPN_EV8, CRAM, CRAI, TUMOR
-        
+        cram_tumor.view()
         cram_normal.concat(cram_tumor)
         .set { case_npn_cram_crai_ch }
         // caseID, NPN, CRAM, CRAI
