@@ -539,7 +539,7 @@ process tb_haplotypecaller {
 
 process mutect2 {
     tag "$caseID"
-    publishDir "${caseID}/${outputDir}/variantcalls/", mode: 'copy', pattern: "*.{VarSeq,PASSonly}.*"
+    publishDir "${caseID}/${outputDir}/variantcalls/", mode: 'copy'
     publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.for.VarSeq.*"
 
     publishDir "${caseID}/${outputDir}/variantcalls/mutect2_bamout", mode: 'copy', pattern: "*.bamout.*"
@@ -556,11 +556,7 @@ process mutect2 {
   
     tuple val(caseID), path("${caseID}.mutect2.PASSonly.TUMORonly.vcf.gz"), path("${caseID}.mutect2.PASSonly.TUMORonly.vcf.gz.tbi"),emit: mutect2_tumorPASS 
 
-
-    
-    path("*.{tsv,table,stats}")
-    path("*tumor.PASSonly.*")
-    path("*.bamout.*")
+    tuple val(caseID), path("${caseID}.mutect2.PASSonly.snpeff.vcf"), path("${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.vcf"), emit: mutect2_snpEFF 
 
     script:
     """
@@ -705,10 +701,8 @@ process strelka2_edits {
 
     java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 !{caseID}.strelka.PASSonly.vcf.gz > !{caseID}.strelka.PASSonly.snpeff.vcf
 
-    !{caseID}.strelka.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
+    cat !{caseID}.strelka.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
     "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive__inframe_deletion') & (GEN[0].VAF >=0.05 & GEN[0].DP>25)" > !{caseID}.strelka.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.vcf
-
-
     '''
 }
 
