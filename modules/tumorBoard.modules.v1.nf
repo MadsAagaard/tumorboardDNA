@@ -191,6 +191,11 @@ switch (params.panel) {
     break;
 }
 
+if (params.wgs) {
+
+
+
+}
 
 if (!params.archiveStorage) {
 outputDir="${params.outdir}/"
@@ -895,7 +900,7 @@ process pcgr_v203_strelka2 {
     --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
-    --assay WES \
+    $assayType \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures
     """
