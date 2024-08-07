@@ -691,7 +691,7 @@ process strelka2_edits {
 
     tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpeff.vcf"), emit: strelka2_PASS_snpeff
     
-    tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.vcf"), emit: strelka2_PASS_TMB_filtered
+    tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf"), emit: strelka2_PASS_TMB_filtered
 
     path("*.strelka2.*")
     
