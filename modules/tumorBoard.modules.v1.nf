@@ -719,7 +719,7 @@ process strelka2_edits {
     java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 !{caseID}.strelka2.PASSonly.vcf.gz > !{caseID}.strelka2.PASSonly.snpeff.vcf
 
     cat !{caseID}.strelka2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
-    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive__inframe_deletion') & (GEN[0].VAF >=0.05 & GEN[0].DP>25)" > !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.vcf
+    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive__inframe_deletion'|ANN[0].EFFECT has 'disruptive__inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[1].VAF >=0.05 & GEN[1].DP>25 & GEN[0].VAF<0.001)" > !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
     '''
 }
 
