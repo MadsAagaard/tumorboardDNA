@@ -852,8 +852,6 @@ process pcgr_v203_mutect2 {
     
     script:
     """
-    bcftools index -t ${vcf}
-
     pcgr \
     --input_vcf ${vcf} \
     --refdata_dir  ${pcgr_data_dir2} \
@@ -888,8 +886,6 @@ process pcgr_v203_strelka2 {
     
     script:
     """
-    bcftools index -t ${vcf}
-
     pcgr \
     --input_vcf ${vcf} \
     --refdata_dir  ${pcgr_data_dir2} \
