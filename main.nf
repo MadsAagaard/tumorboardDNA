@@ -194,8 +194,8 @@ if (params.fastqNGC) {
 }
 
 if (params.cramNGC) {
-        cramfiles="${params.cram}/*.cram"
-        craifiles="${params.cram}/*.crai"
+        cramfiles="${params.cramNGC}/*.cram"
+        craifiles="${params.cramNGC}/*.crai"
 
 
         Channel
@@ -203,7 +203,7 @@ if (params.cramNGC) {
         .map { tuple(it.baseName.tokenize('.').get(0),it) }
         .set { sampleID_cram }
         // above: sampleID, sampleCRAM
-        sampleID_cram.view()
+
         Channel
         .fromPath(craifiles)
         .map { tuple(it.baseName.tokenize('.').get(0),it) }
