@@ -677,7 +677,7 @@ process strelka2_edits {
     
     tuple val(caseID), path("${caseID}.strelka2.PASSonly.vcf.gz"),path("${caseID}.strelka2.PASSonly.vcf.gz.tbi"), emit: strelka2_PASS 
     
-    tuple val(caseID), path("{caseID}.strelka2.PASSonly.TUMORonly.vcf.gz"),path("{caseID}.strelka2.PASSonly.TUMORonly.vcf.gz.tbi"), emit: strelka2_TUMOR_PASS
+    tuple val(caseID), path("${caseID}.strelka2.PASSonly.TUMORonly.vcf.gz"),path("${caseID}.strelka2.PASSonly.TUMORonly.vcf.gz.tbi"), emit: strelka2_TUMOR_PASS
 
     tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpeff.vcf"), emit: strelka2_PASS_snpeff
     
