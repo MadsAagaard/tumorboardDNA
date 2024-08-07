@@ -193,8 +193,55 @@ if (params.fastqNGC) {
     .set { case_fastq_input_ch }
 }
 
+if (params.cramNGC) {
+        cramfiles="${params.cram}/*.cram"
+        craifiles="${params.cram}/*.crai"
 
-if (!params.fastqNGC) {
+
+        Channel
+        .fromPath(cramfiles)
+        .map { tuple(it.baseName.tokenize('.').get(0),it) }
+        .set { sampleID_cram }
+        // above: sampleID, sampleCRAM
+        Channel
+        .fromPath(craifiles)
+        .map { tuple(it.baseName.tokenize('.').get(0),it) }
+        .set { sampleID_crai }
+        // above: sampleID, sampleCRAI
+
+        // Join with samplesheet:
+        normalID_caseID // sampleID normal, caseID
+        .join(sampleID_cram).join(sampleID_crai)
+        .map {tuple(it[1],it[0], it[2],it[3],"NORMAL")}
+        .set { cram_normal }
+        //above structure: caseID, NPN_EV8, CRAM, CRAI, NORMAL
+        
+        tumorID_caseID
+        .join(sampleID_cram).join(sampleID_crai)
+        .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
+        .set { cram_tumor }
+        //above structure: caseID, NPN_EV8, CRAM, CRAI, TUMOR
+        
+        cram_normal.concat(cram_tumor)
+        .set { case_npn_cram_crai_ch }
+        // caseID, NPN, CRAM, CRAI
+    case_npn_cram_crai_ch.view()
+        case_npn_cram_crai_ch
+        .filter{it =~ /NORMAL/}
+        .set { normals_ch }
+
+        case_npn_cram_crai_ch 
+        .filter{it =~ /TUMOR/}
+        .set { tumor_ch }
+        
+        normals_ch
+        .join(tumor_ch)
+        .set { tumorNormal_cram_ch } 
+
+}
+
+
+if (!params.fastqNGC && !params.cramNGC) {
 
     if (params.fastq) {
         params.reads = "${params.fastq}/**{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
