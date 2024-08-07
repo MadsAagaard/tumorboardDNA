@@ -225,7 +225,7 @@ if (params.cramNGC) {
         cram_normal.concat(cram_tumor)
         .set { case_npn_cram_crai_ch }
         // caseID, NPN, CRAM, CRAI
-    case_npn_cram_crai_ch.view()
+
         case_npn_cram_crai_ch
         .filter{it =~ /NORMAL/}
         .set { normals_ch }
@@ -274,8 +274,6 @@ if (!params.fastqNGC && !params.cramNGC) {
         NN1.concat(CF1)
         .set { case_fastq_input_ch }
         //above: NN2 and CF2 in the same channel (same structure as NN2 and CF2)
-        //case_fastq_input_ch.view()
-
     }
 
     ////////////////// INPUT DATA (CRAM) CHANNELS ///////////////////
@@ -318,7 +316,7 @@ if (!params.fastqNGC && !params.cramNGC) {
         cram_normal.concat(cram_tumor)
         .set { case_npn_cram_crai_ch }
         // caseID, NPN, CRAM, CRAI
-    case_npn_cram_crai_ch.view()
+
         case_npn_cram_crai_ch
         .filter{it =~ /NORMAL/}
         .set { normals_ch }
