@@ -566,7 +566,7 @@ process mutect2 {
   
     tuple val(caseID), path("${caseID}.mutect2.PASSonly.TUMORonly.vcf.gz"), path("${caseID}.mutect2.PASSonly.TUMORonly.vcf.gz.tbi"),emit: mutect2_tumorPASS 
 
-    tuple val(caseID), path("${caseID}.mutect2.PASSonly.snpeff.vcf"), path("${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.vcf"), emit: mutect2_snpEFF 
+    tuple val(caseID), path("${caseID}.mutect2.PASSonly.snpeff.vcf"), path("${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf"), emit: mutect2_snpEFF 
 
     script:
     """
@@ -621,7 +621,7 @@ process mutect2 {
     java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 ${caseID}.mutect2.PASSonly.vcf.gz > ${caseID}.mutect2.PASSonly.snpeff.vcf
 
     ${caseID}.mutect2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
-    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion' | ANN[0].EFFECT has 'disruptive_inframe_insertion' | ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[1].AF >=0.05 & GEN[1].DP>25 & GEN[0].AF<0.001))" > ${caseID}.   mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
+    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion' | ANN[0].EFFECT has 'disruptive_inframe_insertion' | ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[1].AF >=0.05 & GEN[1].DP>25 & GEN[0].AF<0.001))" > ${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
     """
 }
 
