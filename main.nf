@@ -27,9 +27,10 @@ params.keepwork                         =null
 params.nomail                           =null
 params.wgs                              =null
 params.gatk                             ="new"
-params.fastqNGC                         =null
-params.cramNGC                          =null
-
+params.fastqTMB                         =null
+params.cramTMB                          =null
+params.NGC                              =null
+params.assaytype                        =null
 //outdir_full_path= "${launchDir}/${params.outdir}/"
 
 runtype = "TN_WES"
@@ -46,6 +47,15 @@ switch (params.server) {
     break;
 }
 
+switch (params.assaytype) {
+
+    case 'NGC':
+    datapattern="WG4_NGC"
+    break;
+    default:
+    datapattern="EV8"
+    break;
+}
 
 
 def helpMessage() {
@@ -157,7 +167,7 @@ channel.fromPath(params.samplesheet)
 
 channel.fromPath(params.samplesheet)
     .splitCsv(sep:'\t')
-    .map { row -> tuple(row[0], row[1]+"_EV8")}
+    .map { row -> tuple(row[0], row[1]+"_${datapattern}")}
     .set { caseID_normalID } // use for Mutect2 --normal
 
 ///////////////// END: SAMPLESHEET CHANNELS ////////////////////////
@@ -165,8 +175,8 @@ channel.fromPath(params.samplesheet)
 
 ////////////////// INPUT DATA (FASTQ) CHANNELS ///////////////////
 
-if (params.fastqNGC) {
-    params.reads = "${params.fastqNGC}/*{fq,fastq}.gz"
+if (params.fastqTMB) {
+    params.reads = "${params.fastqTMB}/*{fq,fastq}.gz"
 
     Channel
     .fromPath(params.reads, followLinks: true)
@@ -197,9 +207,9 @@ if (params.fastqNGC) {
     .set { case_fastq_input_ch }
 }
 
-if (params.cramNGC) {
-        cramfiles="${params.cramNGC}/*.cram"
-        craifiles="${params.cramNGC}/*.crai"
+if (params.cramTMB) {
+        cramfiles="${params.cramTMB}/*.cram"
+        craifiles="${params.cramTMB}/*.crai"
 
 
         Channel
@@ -245,15 +255,15 @@ if (params.cramNGC) {
 }
 
 
-if (!params.fastqNGC && !params.cramNGC) {
+if (!params.fastqTMB && !params.cramTMB) {
 
     if (params.fastq) {
-        params.reads = "${params.fastq}/**{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
+        params.reads = "${params.fastq}/**{.,-}{${datapattern}}{.,-}*R{1,2}*{fq,fastq}.gz"
     }
 
 
     if (!params.cram && !params.fastq && params.fastqInput) {
-        params.reads="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{.,-}{EV8}{.,-}*R{1,2}*{fq,fastq}.gz"
+        params.reads="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{.,-}{${datapattern}}{.,-}*R{1,2}*{fq,fastq}.gz"
     }
 
     if (!params.cram && (params.fastqInput ||params.fastq)) {
@@ -265,13 +275,13 @@ if (!params.fastqNGC && !params.cramNGC) {
         // above sampleID, r1, r2
         normalID_caseID
         .join(read_pairs_ch)
-        .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"NORMAL")}
+        .map {tuple(it[1],it[0]+"_${datapattern}",it[2],it[3],"NORMAL")}
         .set { NN1 }
         //above: caseid, NPN_sampletype(NORMAL), normal R1, normal R2
 
         tumorID_caseID
         .join(read_pairs_ch)
-        .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"TUMOR")}
+        .map {tuple(it[1],it[0]+"_${datapattern}",it[2],it[3],"TUMOR")}
         .set { CF1 }
         //above: caseid, sampleID, ,R1, R2, type
 
@@ -283,13 +293,13 @@ if (!params.fastqNGC && !params.cramNGC) {
     ////////////////// INPUT DATA (CRAM) CHANNELS ///////////////////
 
     if (!params.cram && !params.fastqInput && !params.fastq) {
-        cramfiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{EV8}*.cram"
-        craifiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{EV8}*.crai"
+        cramfiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{${datapattern}}*.cram"
+        craifiles="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{_,-}{${datapattern}}*.crai"
     }
 
     if (params.cram ) {
-        cramfiles="${params.cram}/*{_,-}{EV8}*.cram"
-        craifiles="${params.cram}/*{_,-}{EV8}*.crai"
+        cramfiles="${params.cram}/*{_,-}{${datapattern}}*.cram"
+        craifiles="${params.cram}/*{_,-}{${datapattern}}*.crai"
     }
 
     if (!params.fastqInput && !params.fastq) {
@@ -307,13 +317,13 @@ if (!params.fastqNGC && !params.cramNGC) {
         // Join with samplesheet:
         normalID_caseID // sampleID normal, caseID
         .join(sampleID_cram).join(sampleID_crai)
-        .map {tuple(it[1],it[0]+"_EV8", it[2],it[3],"NORMAL")}
+        .map {tuple(it[1],it[0]+"_${datapattern}", it[2],it[3],"NORMAL")}
         .set { cram_normal }
         //above structure: caseID, NPN_EV8, CRAM, CRAI, NORMAL
         
         tumorID_caseID
         .join(sampleID_cram).join(sampleID_crai)
-        .map {tuple(it[1],it[0]+"_EV8",it[2],it[3],"TUMOR")}
+        .map {tuple(it[1],it[0]+"_${datapattern}",it[2],it[3],"TUMOR")}
         .set { cram_tumor }
         //above structure: caseID, NPN_EV8, CRAM, CRAI, TUMOR
         
@@ -380,7 +390,7 @@ workflow DNA_TUMOR_NORMAL {
 
 
 workflow {
-    if (params.fastqInput || params.fastq||params.fastqNGC) {
+    if (params.fastqInput || params.fastq||params.fastqTMB) {
 
         SUB_DNA_PREPROCESS(case_fastq_input_ch)
         
@@ -404,7 +414,7 @@ workflow {
         SUB_DNA_TUMOR_NORMAL(tumorNormal_bam_ch, caseID_pcgrID)
     }
 
-    if (!params.fastqInput && !params.fastq&& !params.fastqNGC) {
+    if (!params.fastqInput && !params.fastq&& !params.fastqTMB) {
         inputFiles_symlinks_cram(case_npn_cram_crai_ch)
         tb_haplotypecaller(case_npn_cram_crai_ch)  // caseid, npn, cram, crai, type
         tb_cram_bam(case_npn_cram_crai_ch)
