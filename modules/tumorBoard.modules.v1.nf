@@ -193,14 +193,6 @@ switch (params.panel) {
     break;
 }
 
-if (params.wgs) {
-    assaytype="--assay WGS"
-}
-
-if (!params.wgs) {
-    assaytype="--assay WES"
-}
-
 
 if (!params.archiveStorage) {
 outputDir="${params.outdir}/"
@@ -525,12 +517,13 @@ process tb_haplotypecaller {
     path("${crai}")
     path("${cram}")
     script:
+    def assaytype=params.wgs ? "": "-L ${ROI}"
     """
     ${gatk_exec} --java-options "-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads=30" HaplotypeCaller \
     -I ${cram} \
     -R ${genome_fasta} \
     -ERC GVCF \
-    -L ${ROI} \
+    $assaytype \
     --smith-waterman FASTEST_AVAILABLE \
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
@@ -549,15 +542,14 @@ process tb_haplotypecaller {
 
 process mutect2 {
     tag "$caseID"
+
     publishDir "${caseID}/${outputDir}/variantcalls/", mode: 'copy'
     publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.for.VarSeq.*"
-
-    publishDir "${caseID}/${outputDir}/variantcalls/mutect2_bamout", mode: 'copy', pattern: "*.bamout.*"
-
     publishDir "${caseID}/${outputDir}/QC/mutect2_filtering/", mode: 'copy', pattern: "*.{table,stats,tsv}"
 
     input:
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+ 
     output:
 
     tuple val(caseID), path("${caseID}.mutect2.for.VarSeq.vcf.gz"), path("${caseID}.mutect2.for.VarSeq.vcf.gz.tbi"), emit: mutect2_ALL
@@ -584,7 +576,6 @@ process mutect2 {
     -pairHMM FASTEST_AVAILABLE \
     --smith-waterman FASTEST_AVAILABLE \
     -O ${caseID}.mutect2.raw.vcf.gz \
-    -bamout ${caseID}.mutect2.bamout.bam \
     --f1r2-tar-gz ${caseID}.within.f1r2.tar.gz
     
     ${gatk_exec} LearnReadOrientationModel \
@@ -739,11 +730,12 @@ process msisensor {
     path("*_msi*")
  
     script:
+    def assaytype=params.wgs ? "": "-e ${ROI}"
     """
     msisensor msi \
     -d ${msisensor_list} \
     -n ${bamN} -t ${bamT} \
-    -e ${ROI} \
+    $assaytype \
     -o ${caseID}_msi
     """
 }
@@ -805,6 +797,7 @@ process pcgr_v141 {
     path("*.pcgr_acmg.*")
     
     script:
+    def assaytype=params.wgs ? "--assay WGS": "--assay WES"
     //tumorsite=${pcgr_tumor} ? "--tumor_site ${pcgr_tumor}" : ""
     """
     singularity run -B ${s_bind} ${simgpath}/pcgr141.sif pcgr \
@@ -816,7 +809,7 @@ process pcgr_v141 {
     --all_reference_signatures \
     --estimate_tmb --estimate_msi_status \
     --exclude_dbsnp_nonsomatic \
-    --assay WES \
+    $assaytype \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures \
     --include_trials
@@ -831,7 +824,7 @@ process pcgr_v141 {
     --all_reference_signatures \
     --estimate_tmb --estimate_msi_status \
     --exclude_dbsnp_nonsomatic \
-    --assay WES \
+    $assaytype \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures \
     --tmb_algorithm nonsyn \
@@ -853,6 +846,7 @@ process pcgr_v203_mutect2 {
     path("*.pcgr.*")
     
     script:
+    def assaytype=params.wgs ? "--assay WGS": "--assay WES"
     """
     pcgr \
     --input_vcf ${vcf} \
@@ -887,6 +881,8 @@ process pcgr_v203_strelka2 {
     path("*.pcgr.*")
     
     script:
+    
+    def assaytype=params.wgs ? "--assay WGS": "--assay WES"
     """
     pcgr \
     --input_vcf ${vcf} \
