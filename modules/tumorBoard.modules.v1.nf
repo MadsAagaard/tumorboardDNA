@@ -569,6 +569,7 @@ process mutect2 {
     tuple val(caseID), path("${caseID}.mutect2.PASSonly.snpeff.vcf"), path("${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf"), emit: mutect2_snpEFF 
 
     script:
+    def assaytype=params.wgs ? "": "-L ${ROI}"
     """
     ${gatk_exec} --java-options "-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads=30" Mutect2 \
     -R ${genome_fasta} \
@@ -577,7 +578,7 @@ process mutect2 {
     -normal ${sampleID_normal} \
     --germline-resource ${mutect_gnomad} \
     --panel-of-normals ${gatk_wgs_pon} \
-    -L ${ROI} \
+    $assaytype \
     --dont-use-soft-clipped-bases \
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
@@ -621,7 +622,7 @@ process mutect2 {
     java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 ${caseID}.mutect2.PASSonly.vcf.gz > ${caseID}.mutect2.PASSonly.snpeff.vcf
 
     cat ${caseID}.mutect2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
-    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion' | ANN[0].EFFECT has 'disruptive_inframe_insertion' | ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[1].AF >=0.05 & GEN[1].DP>25 & GEN[0].AF<0.001))" > ${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
+    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion'|ANN[0].EFFECT has 'disruptive_inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[${sampleID_tumor}].VAF >=0.05 & GEN[${sampleID_tumor}].DP>25 & GEN[${sampleID_normal}].AF<0.001))" > ${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
     """
 }
 
@@ -641,12 +642,13 @@ process strelka2 {
     tuple val(caseID), path("${caseID}.strelka2.merged.vaf.vcf.gz"), emit: strelkarenameVCF
     
     script:
+    def assaytype=params.wgs ? "": "--exome"
     """
     singularity run -B ${s_bind} ${simgpath}/strelka2_2.9.10.sif /tools/strelka2/bin/configureStrelkaSomaticWorkflow.py \
     --normalBam ${bamN} \
     --tumorBam ${bamT} \
     --referenceFasta  ${genome_fasta} \
-    --exome \
+    $assaytype \
     --runDir strelka
 
     singularity run -B ${s_bind} ${simgpath}/strelka2_2.9.10.sif python2 strelka/runWorkflow.py \
@@ -719,7 +721,7 @@ process strelka2_edits {
     java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 !{caseID}.strelka2.PASSonly.vcf.gz > !{caseID}.strelka2.PASSonly.snpeff.vcf
 
     cat !{caseID}.strelka2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
-    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion'|ANN[0].EFFECT has 'disruptive_inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[1].VAF >=0.05 & GEN[1].DP>25 & GEN[0].VAF<0.001)" > !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
+    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion'|ANN[0].EFFECT has 'disruptive_inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[!{sampleID_tumor}].VAF >=0.05 & GEN[!{sampleID_tumor}].DP>25 & GEN[!{sampleID_normal}].VAF<0.001)" > !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
     '''
 }
 
