@@ -112,7 +112,7 @@ switch (params.genome) {
         gencode_gff3 = "/data/shared/genomes/hg38/gene.annotations/gencode.v36.annotation.gff3"
      
         //Program  files:
-        msisensor_list="/data/shared/genomes/hg38/program_DBs/msisensor/hg38_msisensor_scan.txt"
+        msisensor_list="/data/shared/genomes/hg38/program_DBs/msisensor/hg38v3_msisensor_scan.txt"
         
         accucopy_config="/data/shared/genomes/hg38/accucopy/accucopy.docker.nextflow.conf"
         cnvradar_anno="/data/shared/genomes/hg38/program_DBs/cnvradar/All_20180418.vcf.gz"
@@ -613,7 +613,7 @@ process mutect2 {
     java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 ${caseID}.mutect2.PASSonly.vcf.gz > ${caseID}.mutect2.PASSonly.snpeff.vcf
 
     cat ${caseID}.mutect2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
-    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion'|ANN[0].EFFECT has 'disruptive_inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[${sampleID_tumor}].VAF >=0.05 & GEN[${sampleID_tumor}].DP>25 & GEN[${sampleID_normal}].AF<0.001))" > ${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
+    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion'|ANN[0].EFFECT has 'disruptive_inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[${sampleID_tumor}].AF >=0.05 & GEN[${sampleID_tumor}].DP>25 & GEN[${sampleID_normal}].AF<0.001))" > ${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
     """
 }
 
@@ -712,7 +712,7 @@ process strelka2_edits {
     java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 !{caseID}.strelka2.PASSonly.vcf.gz > !{caseID}.strelka2.PASSonly.snpeff.vcf
 
     cat !{caseID}.strelka2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
-    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion'|ANN[0].EFFECT has 'disruptive_inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[!{sampleID_tumor}].VAF >=0.05 & GEN[!{sampleID_tumor}].DP>25 & GEN[!{sampleID_normal}].VAF<0.001)" > !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
+    "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion'|ANN[0].EFFECT has 'disruptive_inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[!{sampleID_tumor}_TUMOR].VAF >=0.05 & GEN[!{sampleID_tumor}_TUMOR].DP>25 & GEN[!{sampleID_normal}_NORMAL].VAF<0.001)" > !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
     '''
 }
 
@@ -723,6 +723,8 @@ process msisensor {
     publishDir "${caseID}/${outputDir}/MSIsensor/", mode: 'copy'
     publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*_msi"
 
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/msisensorPro120'
+
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT), val(typeT)
 
@@ -732,7 +734,7 @@ process msisensor {
     script:
     def assaytype=params.wgs ? "": "-e ${ROI}"
     """
-    msisensor msi \
+    msisensor-pro msi \
     -d ${msisensor_list} \
     -n ${bamN} -t ${bamT} \
     $assaytype \
