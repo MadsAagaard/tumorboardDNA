@@ -631,7 +631,9 @@ process strelka2 {
     output:
     path("*.strelka2.*")
     tuple val(caseID), path("${caseID}.strelka2.merged.vaf.vcf.gz"), emit: strelkarenameVCF
-    
+    if (params.server=="lnx01") {
+            conda '/lnx01_data3/shared/programmer/miniconda3/envs/py310'
+    }
     script:
     def assaytype=params.wgs ? "": "--exome"
     """
