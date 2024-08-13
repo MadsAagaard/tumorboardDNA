@@ -625,15 +625,17 @@ process strelka2 {
     publishDir "${caseID}/${outputDir}/variantcalls/strelka2", mode: 'copy'
     cpus 10
 
+    if (params.server=="lnx01") {
+            conda '/lnx01_data3/shared/programmer/miniconda3/envs/py310'
+    }
+    
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
 
     output:
     path("*.strelka2.*")
     tuple val(caseID), path("${caseID}.strelka2.merged.vaf.vcf.gz"), emit: strelkarenameVCF
-    if (params.server=="lnx01") {
-            conda '/lnx01_data3/shared/programmer/miniconda3/envs/py310'
-    }
+
     script:
     def assaytype=params.wgs ? "": "--exome"
     """
