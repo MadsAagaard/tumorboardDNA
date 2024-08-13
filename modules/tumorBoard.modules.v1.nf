@@ -626,7 +626,7 @@ process strelka2 {
     cpus 10
 
     if (params.server=="lnx01") {
-            conda '/lnx01_data3/shared/programmer/miniconda3/envs/py310'
+            conda '/data/shared/programmer/miniconda3/envs/py310'
     }
     
     input: 
