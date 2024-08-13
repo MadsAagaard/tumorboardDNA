@@ -570,7 +570,7 @@ process mutect2 {
     -normal ${sampleID_normal} \
     --germline-resource ${mutect_gnomad} \
     --panel-of-normals ${gatk_wgs_pon} \
-    $assaytype \
+    -L ${ROI} \
     --dont-use-soft-clipped-bases \
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
