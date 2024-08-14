@@ -344,7 +344,7 @@ if (!params.fastqTMB && !params.cramTMB) {
         .set { tumorNormal_cram_ch } 
     }
 }
-
+tumorNormal_cram_ch.view()
 log.info """\
 
 ========================================================
