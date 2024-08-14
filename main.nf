@@ -344,7 +344,7 @@ if (!params.fastqTMB && !params.cramTMB) {
         .set { tumorNormal_cram_ch } 
     }
 }
-tumorNormal_cram_ch.view()
+
 log.info """\
 
 ========================================================
@@ -356,10 +356,6 @@ rundir      : $params.rundir
 runtype     : $runtype
 runID       : $date.$user
 """
-
-
- //   {msisensor_input; mutect2_input; sequenza_input; accucopy_input;tumor_normal_bams4;facets_input}
-
 
 include { 
 
