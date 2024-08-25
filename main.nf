@@ -52,6 +52,10 @@ switch (params.assaytype) {
     case 'NGC':
     datapattern="WG4_NGC"
     break;
+
+    case 'BEH':
+    datapattern="EV8_BEH"
+    break;
     default:
     datapattern="EV8"
     break;

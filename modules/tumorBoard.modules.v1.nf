@@ -843,8 +843,14 @@ process pcgr_v203_mutect2 {
     publishDir "${caseID}/${outputDir}/PCGR203_mutect2/", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
-   
+  
+    if (params.server=="lnx01") {
+            conda '/data/shared/programmer/miniconda3/envs/pcgr203'
+    }
+    if (params.server=="lnx02") {
+        conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
+    }
+
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
 
@@ -878,7 +884,12 @@ process pcgr_v203_strelka2 {
     publishDir "${caseID}/${outputDir}/PCGR203_strelka/", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
+    if (params.server=="lnx01") {
+            conda '/data/shared/programmer/miniconda3/envs/pcgr203'
+    }
+    if (params.server=="lnx02") {
+        conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
+    }
    
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
