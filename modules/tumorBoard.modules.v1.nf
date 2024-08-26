@@ -870,7 +870,7 @@ process pcgr_v203_mutect2 {
     --min_mutations_signatures 100 \
     --all_reference_signatures \
     --estimate_tmb \
-    --tmb_display coding_non_silent \
+    --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
     $assaytype \
@@ -911,7 +911,7 @@ process pcgr_v203_strelka2 {
     --min_mutations_signatures 100 \
     --all_reference_signatures \
     --estimate_tmb \
-    --tmb_display coding_non_silent \
+    --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
     $assaytype \
