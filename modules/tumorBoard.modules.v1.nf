@@ -810,21 +810,6 @@ process pcgr_v141 {
     --input_vcf ${vcf} \
     --pcgr_dir ${pcgr_data_dir} --output_dir . \
     --genome_assembly ${pcgr_assembly} \
-    --sample_id ${caseID}_TMB_all \
-    --min_mutations_signatures 100 \
-    --all_reference_signatures \
-    --estimate_tmb --estimate_msi_status \
-    --exclude_dbsnp_nonsomatic \
-    $assaytype \
-    --tumor_site ${pcgr_tumor} \
-    --estimate_signatures \
-    --include_trials
-
-
-    singularity run -B ${s_bind} ${simgpath}/pcgr141.sif pcgr \
-    --input_vcf ${vcf} \
-    --pcgr_dir ${pcgr_data_dir} --output_dir . \
-    --genome_assembly ${pcgr_assembly} \
     --sample_id ${caseID}_TMB_NonSyn \
     --min_mutations_signatures 100 \
     --all_reference_signatures \
@@ -840,7 +825,7 @@ process pcgr_v141 {
 
 process pcgr_v203_mutect2 {
     errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR203_mutect2/", mode: 'copy', pattern: "*.pcgr.*"
+    publishDir "${caseID}/${outputDir}/PCGR203/", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
   
@@ -855,7 +840,7 @@ process pcgr_v203_mutect2 {
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
 
     output:
-    path("*.pcgr.*")
+    path("*.pcgr.*.{xlsx,tsv,html}")
     
     script:
     def assaytype=params.wgs ? "--assay WGS": "--assay WES"
@@ -866,7 +851,7 @@ process pcgr_v203_mutect2 {
     --output_dir . \
     --vep_dir ${pcgr_VEP} \
     --genome_assembly ${pcgr_assembly} \
-    --sample_id ${caseID}_TMB_missense \
+    --sample_id ${caseID}_mutect2 \
     --min_mutations_signatures 100 \
     --all_reference_signatures \
     --estimate_tmb \
@@ -881,7 +866,7 @@ process pcgr_v203_mutect2 {
 
 process pcgr_v203_strelka2 {
     errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR203_strelka/", mode: 'copy', pattern: "*.pcgr.*"
+    publishDir "${caseID}/${outputDir}/PCGR203/", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
     if (params.server=="lnx01") {
@@ -895,7 +880,7 @@ process pcgr_v203_strelka2 {
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
 
     output:
-    path("*.pcgr.*")
+    path("*.pcgr.*.{xlsx,tsv,html}")
     
     script:
     
@@ -907,7 +892,7 @@ process pcgr_v203_strelka2 {
     --output_dir . \
     --vep_dir ${pcgr_VEP} \
     --genome_assembly ${pcgr_assembly} \
-    --sample_id ${caseID}_TMB_missense \
+    --sample_id ${caseID}_strelka2 \
     --min_mutations_signatures 100 \
     --all_reference_signatures \
     --estimate_tmb \
