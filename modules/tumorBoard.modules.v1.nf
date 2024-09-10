@@ -870,7 +870,7 @@ process pcgr_v203_strelka2 {
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
     if (params.server=="lnx01") {
-            conda '/data/shared/programmer/miniconda3/envs/pcgr203'
+        conda '/data/shared/programmer/miniconda3/envs/pcgr203'
     }
     if (params.server=="lnx02") {
         conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
@@ -893,6 +893,49 @@ process pcgr_v203_strelka2 {
     --vep_dir ${pcgr_VEP} \
     --genome_assembly ${pcgr_assembly} \
     --sample_id ${caseID}_strelka2 \
+    --min_mutations_signatures 100 \
+    --all_reference_signatures \
+    --estimate_tmb \
+    --tmb_display missense_only \
+    --estimate_msi \
+    --exclude_dbsnp_nonsomatic \
+    $assaytype \
+    --tumor_site ${pcgr_tumor} \
+    --estimate_signatures
+    """
+}
+
+process pcgr_v203_strelka2_manualFilter {
+    errorStrategy 'ignore'
+    publishDir "${caseID}/${outputDir}/PCGR203/", mode: 'copy', pattern: "*.pcgr.*"
+    //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
+   
+    if (params.server=="lnx01") {
+        conda '/data/shared/programmer/miniconda3/envs/pcgr203'
+    }
+    if (params.server=="lnx02") {
+        conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
+    }
+   
+    input:
+    tuple val(caseID),  path(vcf),  val(pcgr_tumor)
+
+    output:
+    path("*.pcgr.*.{xlsx,tsv,html}")
+    
+    script:
+    
+    def assaytype=params.wgs ? "--assay WGS": "--assay WES"
+    """
+
+
+    pcgr \
+    --input_vcf ${vcf} \
+    --refdata_dir  ${pcgr_data_dir2} \
+    --output_dir . \
+    --vep_dir ${pcgr_VEP} \
+    --genome_assembly ${pcgr_assembly} \
+    --sample_id ${caseID}_strelka2_manual \
     --min_mutations_signatures 100 \
     --all_reference_signatures \
     --estimate_tmb \
@@ -954,6 +997,7 @@ workflow SUB_DNA_TUMOR_NORMAL {
     pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_strelka2(strelka2_edits.out.strelka2_PASS.join(caseID_pcgrID))
+    pcgr_v203_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
     emit:    
     mutect2_out=mutect2.out.mutect2_ALL
 
