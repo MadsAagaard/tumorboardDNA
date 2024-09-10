@@ -688,7 +688,7 @@ process strelka2_edits {
 
     tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpeff.vcf"), emit: strelka2_PASS_snpeff
     
-    tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf"), emit: strelka2_PASS_TMB_filtered
+    tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf.gz"),path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf.gz.tbi" , emit: strelka2_PASS_TMB_filtered
 
     path("*.strelka2.*")
     
@@ -717,6 +717,10 @@ process strelka2_edits {
 
     cat !{caseID}.strelka2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
     "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion'|ANN[0].EFFECT has 'disruptive_inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[!{sampleID_tumor}_TUMOR].VAF >=0.05 & GEN[!{sampleID_tumor}_TUMOR].DP>25 & GEN[!{sampleID_normal}_NORMAL].VAF<0.001)" > !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
+    
+    bgzip !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
+    bcftools index -t !{caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf.gz
+    
     '''
 }
 
@@ -918,7 +922,7 @@ process pcgr_v203_strelka2_manualFilter {
     }
    
     input:
-    tuple val(caseID),  path(vcf),  val(pcgr_tumor)
+    tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
 
     output:
     path("*.pcgr.*.{xlsx,tsv,html}")
@@ -927,8 +931,6 @@ process pcgr_v203_strelka2_manualFilter {
     
     def assaytype=params.wgs ? "--assay WGS": "--assay WES"
     """
-
-
     pcgr \
     --input_vcf ${vcf} \
     --refdata_dir  ${pcgr_data_dir2} \
