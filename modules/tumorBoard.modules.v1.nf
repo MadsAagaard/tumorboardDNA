@@ -1046,7 +1046,7 @@ process manta_somatic {
     publishDir "${caseID}/${outputDir}/NEWTOOLS/manta_somatic/", mode: 'copy'
     //publishDir "${outputDir}/structuralVariants/manta/", mode: 'copy', pattern: "*.{AFanno,filtered}.*"
 
-    cpus 50
+    cpus 12
     maxForks 3
 
     input: 
@@ -1100,7 +1100,7 @@ process hrd_scores2 {
   
     publishDir "${caseID}/${outputDir}/NEWTOOLS/HRD/", mode: 'copy'
 
-    cpus 50
+    cpus 4
     maxForks 3
     conda '/lnx01_data3/shared/programmer/miniconda3/envs/sigrap011/'
 
