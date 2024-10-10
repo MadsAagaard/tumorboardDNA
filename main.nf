@@ -368,7 +368,7 @@ include {
          tb_haplotypecaller;
          SUB_DNA_PREPROCESS;
          SUB_DNA_QC;
-         SUB_DNA_TUMOR_NORMAL } from "./modules/tumorBoard.modules.v1.nf" 
+         SUB_PAIRED_TN } from "./modules/tumorBoard.modules.v1.nf" 
 
 
 /*
@@ -411,7 +411,7 @@ workflow {
         normal_ch.join(tumor_ch)
         .set { tumorNormal_bam_ch }
 
-        SUB_DNA_TUMOR_NORMAL(tumorNormal_bam_ch, caseID_pcgrID)
+        SUB_PAIRED_TN(tumorNormal_bam_ch, caseID_pcgrID)
     }
 
     if (!params.fastqInput && !params.fastq&& !params.fastqTMB) {
@@ -437,7 +437,7 @@ workflow {
         .set { tumorNormal_bam_ch }
       // above structure: tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
         
-        SUB_DNA_TUMOR_NORMAL(tumorNormal_bam_ch, caseID_pcgrID)
+        SUB_PAIRED_TN(tumorNormal_bam_ch, caseID_pcgrID)
     }
 }
 
