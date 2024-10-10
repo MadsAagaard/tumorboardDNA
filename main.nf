@@ -289,7 +289,6 @@ runID       : $date.$user
 include { 
 
          inputFiles_symlinks_cram;
-         tb_cram_bam;
          tb_haplotypecaller;
          SUB_DNA_PREPROCESS;
          SUB_DNA_QC;
@@ -316,14 +315,13 @@ workflow {
         .set {cram_per_sample_ch}
     }
 
-
     inputFiles_symlinks_cram(cram_per_sample_ch)
     tb_haplotypecaller(normal_cram_ch)
 
     if (!params.skipQC) {
         SUB_DNA_QC(cram_per_sample_ch)
     }
-    
+
     SUB_PAIRED_TN(tumorNormal_cram_ch, caseID_pcgrID)
 }
 
