@@ -1284,7 +1284,7 @@ workflow SUB_DNA_QC {
 
 }
 
-workflow SUB_DNA_TUMOR_NORMAL {
+workflow SUB_PAIRED_TN {
     take:
     tumorNormal_bam_ch
     caseID_pcgrID
