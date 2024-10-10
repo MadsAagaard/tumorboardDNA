@@ -179,92 +179,12 @@ channel.fromPath(params.samplesheet)
 
 ////////////////// INPUT DATA (FASTQ) CHANNELS ///////////////////
 
-if (params.fastqTMB) {
-    params.reads = "${params.fastqTMB}/*{fq,fastq}.gz"
-
-    Channel
-    .fromPath(params.reads, followLinks: true)
-    .map { tuple(it.baseName.tokenize('-').get(0)+"_"+it.baseName.tokenize('-').get(1),it) }
-    .filter {it =~ /_R1/}
-    .set {fastq_inputR1}
 
 
-    Channel
-    .fromPath(params.reads, followLinks: true)
-    .map { tuple(it.baseName.tokenize('-').get(0)+"_"+it.baseName.tokenize('-').get(1),it) }
-    .filter {it =~ /_R2/}
-    .set {fastq_inputR2}
-
-    Channel
-    fastq_inputR1.join(fastq_inputR2)
-    .set { fastq_final }
-
-    normalID_caseID.join(fastq_final)
-    .map {tuple(it[1],it[0],it[2],it[3],"NORMAL")}
-    .set { NN1 }
-
-    tumorID_caseID.join(fastq_final)
-    .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
-    .set { CF1 }
-
-    NN1.concat(CF1)
-    .set { case_fastq_input_ch }
-}
-
-if (params.cramTMB) {
-        cramfiles="${params.cramTMB}/*.cram"
-        craifiles="${params.cramTMB}/*.crai"
-
-
-        Channel
-        .fromPath(cramfiles)
-        .map { tuple(it.baseName.tokenize('.').get(0),it) }
-        .set { sampleID_cram }
-        // above: sampleID, sampleCRAM
-
-        Channel
-        .fromPath(craifiles)
-        .map { tuple(it.baseName.tokenize('.').get(0),it) }
-        .set { sampleID_crai }
-        // above: sampleID, sampleCRAI
-
-        // Join with samplesheet:
-        normalID_caseID // sampleID normal, caseID
-        .join(sampleID_cram).join(sampleID_crai)
-        .map {tuple(it[1],it[0], it[2],it[3],"NORMAL")}
-        .set { cram_normal }
-        //above structure: caseID, NPN_EV8, CRAM, CRAI, NORMAL
-        
-        tumorID_caseID
-        .join(sampleID_cram).join(sampleID_crai)
-        .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
-        .set { cram_tumor }
-        //above structure: caseID, NPN_EV8, CRAM, CRAI, TUMOR
-        cram_normal.concat(cram_tumor)
-        .set { case_npn_cram_crai_ch }
-        // caseID, NPN, CRAM, CRAI
-
-        case_npn_cram_crai_ch
-        .filter{it =~ /NORMAL/}
-        .set { normals_ch }
-
-        case_npn_cram_crai_ch 
-        .filter{it =~ /TUMOR/}
-        .set { tumor_ch }
-        
-        normals_ch
-        .join(tumor_ch)
-        .set { tumorNormal_cram_ch } 
-
-}
-
-
-if (!params.fastqTMB && !params.cramTMB) {
 
     if (params.fastq) {
         params.reads = "${params.fastq}/**{.,-}{${datapattern}}{.,-}*R{1,2}*{fq,fastq}.gz"
     }
-
 
     if (!params.cram && !params.fastq && params.fastqInput) {
         params.reads="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{.,-}{${datapattern}}{.,-}*R{1,2}*{fq,fastq}.gz"
@@ -337,17 +257,22 @@ if (!params.fastqTMB && !params.cramTMB) {
 
         case_npn_cram_crai_ch
         .filter{it =~ /NORMAL/}
-        .set { normals_ch }
+        .set { normal_cram_ch }
 
         case_npn_cram_crai_ch 
         .filter{it =~ /TUMOR/}
-        .set { tumor_ch }
+        .set { tumor_cram_ch }
         
-        normals_ch
-        .join(tumor_ch)
-        .set { tumorNormal_cram_ch } 
+        normal_cram_ch
+        .join(tumor_cram_ch)
+        .set { tumorNormal_cram_ch }
+
+        normal_cram_ch
+        .concat(tumor_cram_ch)
+        .set { cram_per_sample_ch }
+
     }
-}
+
 
 log.info """\
 
@@ -371,58 +296,45 @@ include {
          SUB_PAIRED_TN } from "./modules/tumorBoard.modules.v1.nf" 
 
 
-/*
-workflow DNA_TUMOR_NORMAL {
-    take:
-    tumorNormal_bam_ch
-    main:
-    mutect2(tumorNormal_bam_ch)
-    msisensor(tumorNormal_bam_ch)
-    sequenza(tumorNormal_bam_ch)
-    sequenza_R_output(sequenza.out)
-    pcgr_v103(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
-    pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
-    emit:    
-    mutect2_out=mutect2.out.mutect2_vcf
-
-}
-*/
-
-
 workflow {
-    if (params.fastqInput || params.fastq||params.fastqTMB) {
+    if (params.fastqInput || params.fastq) {
 
         SUB_DNA_PREPROCESS(case_fastq_input_ch)
-        
-        if (!params.skipQC) {
-            SUB_DNA_QC(SUB_DNA_PREPROCESS.out.finalBam)
-        }
-        
-        tb_haplotypecaller(SUB_DNA_PREPROCESS.out.finalBam)
 
-        SUB_DNA_PREPROCESS.out.finalBam
+        SUB_DNA_PREPROCESS.out.finalAln
         .filter{it =~ /NORMAL/}  
-        .set {normal_ch }
+        .set {normal_cram_ch }
 
-        SUB_DNA_PREPROCESS.out.finalBam
+        SUB_DNA_PREPROCESS.out.finalAln
         .filter{it =~ /TUMOR/}  
-        .set {tumor_ch }
+        .set {tumor_cram_ch }
 
         normal_ch.join(tumor_ch)
-        .set { tumorNormal_bam_ch }
+        .set { tumorNormal_cram_ch }
 
-        SUB_PAIRED_TN(tumorNormal_bam_ch, caseID_pcgrID)
+        normal_ch.concat(tumor_ch)
+        .set {cram_per_sample_ch}
     }
 
-    if (!params.fastqInput && !params.fastq&& !params.fastqTMB) {
-        inputFiles_symlinks_cram(case_npn_cram_crai_ch)
+
+    inputFiles_symlinks_cram(cram_per_sample_ch)
+    tb_haplotypecaller(normal_cram_ch)
+
+    if (!params.skipQC) {
+        SUB_DNA_QC(cram_per_sample_ch)
+    }
+    
+    SUB_PAIRED_TN(tumorNormal_cram_ch, caseID_pcgrID)
+}
+
+
+/*
+    if (!params.fastqInput && !params.fastq) {
+        inputFiles_symlinks_cram(cram_per_sample_ch)
         tb_haplotypecaller(case_npn_cram_crai_ch)  // caseid, npn, cram, crai, type
-        tb_cram_bam(case_npn_cram_crai_ch)
+
         
-        if (!params.skipQC) {
-            SUB_DNA_QC(tb_cram_bam.out.bam)
-        }
-        
+
         tb_cram_bam.out.bam
         .filter{it =~ /NORMAL/}
         .set { bam_normals_ch }
@@ -434,16 +346,14 @@ workflow {
 
         bam_normals_ch
         .join(bam_tumor_ch)
-        .set { tumorNormal_bam_ch }
+        .set { tumorNormal_cram_ch }
       // above structure: tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+    
         
-        SUB_PAIRED_TN(tumorNormal_cram_ch,tumorNormal_bam_ch, caseID_pcgrID)
     }
-}
+*/
 
-
-
-
+        
 
 
 

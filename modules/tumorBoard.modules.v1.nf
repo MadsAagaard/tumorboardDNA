@@ -333,7 +333,7 @@ process tb_align {
     """
 }
 
-
+/*
 process tb_markDup_v2_bam_cram {
     errorStrategy 'ignore'
     maxForks 6
@@ -364,8 +364,9 @@ process tb_markDup_v2_bam_cram {
 
     """
 }
+*/
 
-process tb_markDup_v3_cram {
+process markDup_cram {
     errorStrategy 'ignore'
     maxForks 6
     tag "$sampleID"
@@ -376,7 +377,7 @@ process tb_markDup_v3_cram {
     tuple val(caseID),val(sampleID), path(bam), val(type)
     
     output:
-    tuple val(caseID),val(sampleID),  path("${sampleID}.${type}.${params.genome}.${genome_version}.BWA.MD.cram"), path("${sampleID}.${type}.${params.genome}.${genome_version}.BWA.MD*crai"),val(type), emit: markDup_output
+    tuple val(caseID),val(sampleID),  path("${sampleID}.${type}.${params.genome}.${genome_version}.BWA.MD.cram"), path("${sampleID}.${type}.${params.genome}.${genome_version}.BWA.MD*crai"), val(type), emit: markDup_output
     
     script:
     """
@@ -391,6 +392,7 @@ process tb_markDup_v3_cram {
     """
 }
 
+/*
 process tb_cram_bam {
 
    // publishDir "${caseID}/${params.outdir}/cram_TN_symlinks/", mode: 'link', pattern: '*.symedit*'
@@ -414,7 +416,7 @@ process tb_cram_bam {
     mv ${crai} ${sampleID}.${type}.${params.genome}.${genome_version}.BWA.MD.symedit.cram.crai
     """
 }
-
+*/
 
 ///////////////////////////////// QC MODULES ////////////////////////////
 // TB QC input channel structure:
@@ -1267,21 +1269,21 @@ workflow SUB_DNA_PREPROCESS {
     tb_fastq_to_ubam(case_fastq_input_ch)
     tb_markAdapters(tb_fastq_to_ubam.out)
     tb_align(tb_markAdapters.out)
-    tb_markDup_v2_bam_cram(tb_align.out)
+    markDup_cram(tb_align.out)
 
     emit:
-    finalBam=tb_markDup_v2_bam_cram.out.markDup_bam //caseID, sampleID, BAM, BAI,type
-    finalCram=tb_markDup_v2_bam_cram.out.markDup_cram //caseID, sampleID, CRAM, CRAI,type
+    finalAln=markDup_cram.out.markDup_output //caseID, sampleID, CRAM, CRAI,type
 
 }
 
 workflow SUB_DNA_QC {
     take:
-    case_sid_cram_crai
+    cram_per_sample_ch
+ 
     main:
-    tb_samtools(case_sid_cram_crai)
-    tb_qualimap(case_sid_cram_crai)
-    tb_fastqc_bam(case_sid_cram_crai)
+    tb_samtools(cram_per_sample_ch)
+    tb_qualimap(cram_per_sample_ch)
+    tb_fastqc_bam(cram_per_sample_ch)
     multiQC(tb_samtools.out.collect(),tb_qualimap.out.collect(),tb_fastqc_bam.out.collect())
 
 }
@@ -1289,7 +1291,6 @@ workflow SUB_DNA_QC {
 workflow SUB_PAIRED_TN {
     take:
     tumorNormal_cram_ch
-    tumorNormal_bam_ch
     caseID_pcgrID
     main:
     mutect2(tumorNormal_cram_ch)
