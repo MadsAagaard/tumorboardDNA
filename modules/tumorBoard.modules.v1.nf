@@ -1299,7 +1299,7 @@ workflow SUB_PAIRED_TN {
 
     msisensor(tumorNormal_cram_ch)
 
-    sequenza_conda(tumorNormal_bam_ch)
+    sequenza_conda(tumorNormal_cram_ch)
     sequenza_R_output_conda(sequenza_conda.out)
     pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
@@ -1307,8 +1307,8 @@ workflow SUB_PAIRED_TN {
     pcgr_v203_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
 
     if (params.wgs) {
-        cnvkit_somatic(tumorNormal_cram_ch)
-        cnvkitExportFiles(cnvkit_somatic.out.CNVcalls, cnvkit_somatic.out.CNVcnr)
+       // cnvkit_somatic(tumorNormal_cram_ch)
+        //cnvkitExportFiles(cnvkit_somatic.out.CNVcalls, cnvkit_somatic.out.CNVcnr)
         manta_somatic(tumorNormal_cram_ch)
         amber(tumorNormal_cram_ch)
         cobalt(tumorNormal_cram_ch)
