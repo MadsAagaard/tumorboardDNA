@@ -1291,12 +1291,12 @@ workflow SUB_PAIRED_TN {
     tumorNormal_bam_ch
     caseID_pcgrID
     main:
-    mutect2(tumorNormal_bam_ch)
-    strelka2(tumorNormal_bam_ch)
-    strelka2_edits(tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF))
+    mutect2(tumorNormal_cram_ch)
+    strelka2(tumorNormal_cram_ch)
+    strelka2_edits(tumorNormal_cram_ch.join(strelka2.out.strelkarenameVCF))
     //tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF).view()
 
-    msisensor(tumorNormal_bam_ch)
+    msisensor(tumorNormal_cram_ch)
 
     sequenza_conda(tumorNormal_bam_ch)
     sequenza_R_output_conda(sequenza_conda.out)
