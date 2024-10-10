@@ -33,7 +33,7 @@ params.NGC                              =null
 params.assaytype                        =null
 //outdir_full_path= "${launchDir}/${params.outdir}/"
 
-runtype = "TN_WES"
+runtype = "paired_TN"
 
 
 switch (params.server) {
@@ -440,6 +440,12 @@ workflow {
         SUB_DNA_TUMOR_NORMAL(tumorNormal_bam_ch, caseID_pcgrID)
     }
 }
+
+
+
+
+
+
 
 /*
 workflow.onComplete {

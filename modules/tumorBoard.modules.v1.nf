@@ -59,8 +59,6 @@ switch (params.server) {
 }
 
 
-
-
 switch (params.genome) {
     case 'hg19':
         assembly="hg19"
@@ -144,6 +142,8 @@ switch (params.genome) {
         pcgr_data_dir="/data/shared/genomes/hg38/program_DBs/PCGR/"
         pcgr_VEP="/data/shared/genomes/hg38/program_DBs/PCGRv2/VEP_112_GRCh38_merged/"
         pcgr_data_dir2="/data/shared/genomes/hg38/program_DBs/PCGRv2/20240621/"
+        hmftools_data_dir_v534="/data/shared/genomes/hg38/program_DBs/hmftools/v5_34/ref/38"
+        hmftools_data_dir_v60="/data/shared/genomes/hg38/program_DBs/hmftools/v6_0/ref/38"
 
         // Program indexes:
         
@@ -517,13 +517,13 @@ process tb_haplotypecaller {
     path("${crai}")
     path("${cram}")
     script:
-    def assaytype=params.wgs ? "": "-L ${ROI}"
+    def datatype=params.wgs ? "": "-L ${ROI}"
     """
     ${gatk_exec} --java-options "-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads=30" HaplotypeCaller \
     -I ${cram} \
     -R ${genome_fasta} \
     -ERC GVCF \
-    $assaytype \
+    -L ${ROI} \ 
     --smith-waterman FASTEST_AVAILABLE \
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
@@ -539,7 +539,7 @@ process tb_haplotypecaller {
     -G AS_StandardAnnotation
     """
 }
-
+// NB: Disabled full wGS germline var calling for now (too slow - requires implementation of splitIntervals: $datatype \)
 process mutect2 {
     tag "$caseID"
 
@@ -560,8 +560,11 @@ process mutect2 {
 
     tuple val(caseID), path("${caseID}.mutect2.PASSonly.snpeff.vcf"), path("${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf"), emit: mutect2_snpEFF 
 
+    // for HRD:
+    tuple val(caseID), path("${caseID}.mutect2.PASSonly.chr1_22_XY.vcf.gz"), path("${caseID}.mutect2.PASSonly.chr1_22_XY.vcf.gz.tbi"), emit: mutect2_PASS_reduced
+
     script:
-    def assaytype=params.wgs ? "": "-L ${ROI}"
+    def datatype=params.wgs ? "": "-L ${ROI}"
     """
     ${gatk_exec} --java-options "-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads=30" Mutect2 \
     -R ${genome_fasta} \
@@ -570,7 +573,7 @@ process mutect2 {
     -normal ${sampleID_normal} \
     --germline-resource ${mutect_gnomad} \
     --panel-of-normals ${gatk_wgs_pon} \
-    -L ${ROI} \
+    $datatype \
     --dont-use-soft-clipped-bases \
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
@@ -604,6 +607,12 @@ process mutect2 {
     -V ${caseID}.mutect2.for.VarSeq.vcf.gz \
     --exclude-filtered \
     -O ${caseID}.mutect2.PASSonly.vcf.gz
+
+    ${gatk_exec} SelectVariants -R ${genome_fasta} \
+    -V ${caseID}.mutect2.for.VarSeq.vcf.gz \
+    --exclude-filtered \
+    -L /data/shared/genomes/hg38/chrom1_22_XY.1col.list \
+    -O ${caseID}.mutect2.PASSonly.chr1_22_XY.vcf.gz
     
     ${gatk_exec} SelectVariants -R ${genome_fasta} \
     -V ${caseID}.mutect2.for.VarSeq.vcf.gz \
@@ -614,6 +623,10 @@ process mutect2 {
 
     cat ${caseID}.mutect2.PASSonly.snpeff.vcf | java -jar /data/shared/programmer/snpEff5.2/SnpSift.jar filter \
     "(ANN[0].EFFECT has 'missense_variant'| ANN[0].EFFECT has 'frameshift_variant'| ANN[0].EFFECT has 'stop_gained'| ANN[0].EFFECT has 'conservative_inframe_deletion'|  ANN[0].EFFECT has 'disruptive_inframe_deletion'|ANN[0].EFFECT has 'disruptive_inframe_insertion'|ANN[0].EFFECT has 'conservative_inframe_insertion') & (GEN[${sampleID_tumor}].AF >=0.01 & GEN[${sampleID_tumor}].DP>25)" > ${caseID}.mutect2.PASSonly.snpeff.snpSift.STDFILTERS_FOR_TMB.v2.vcf
+
+     ${gatk_exec} SelectVariants -R ${genome_fasta} \
+
+
     """
 }
 
@@ -637,13 +650,13 @@ process strelka2 {
     tuple val(caseID), path("${caseID}.strelka2.merged.vaf.vcf.gz"), emit: strelkarenameVCF
 
     script:
-    def assaytype=params.wgs ? "": "--exome"
+    def datatype=params.wgs ? "": "--exome"
     """
     singularity run -B ${s_bind} ${simgpath}/strelka2_2.9.10.sif /tools/strelka2/bin/configureStrelkaSomaticWorkflow.py \
     --normalBam ${bamN} \
     --tumorBam ${bamT} \
     --referenceFasta  ${genome_fasta} \
-    $assaytype \
+    $datatype \
     --runDir strelka
 
     singularity run -B ${s_bind} ${simgpath}/strelka2_2.9.10.sif python2 strelka/runWorkflow.py \
@@ -667,8 +680,6 @@ process strelka2 {
     """
 }
 
-
-
 process strelka2_edits {
     errorStrategy 'ignore'
     tag "$caseID"
@@ -688,7 +699,7 @@ process strelka2_edits {
 
     tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpeff.vcf"), emit: strelka2_PASS_snpeff
     
-    tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf.gz"),path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf.gz.tbi" , emit: strelka2_PASS_TMB_filtered
+    tuple val(caseID), path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf.gz"),path("${caseID}.strelka2.PASSonly.snpEff.snpSift.STDFILTERS_FOR_TMB.v2.vcf.gz.tbi"), emit: strelka2_PASS_TMB_filtered
 
     path("*.strelka2.*")
     
@@ -710,7 +721,7 @@ process strelka2_edits {
 
     !{gatk_exec} SelectVariants -R !{genome_fasta} \
     -V !{caseID}.strelka2.for.VarSeq.gz \
-    --exclude-filtered -xl-sn !{sampleID_normal} --exclude-non-variants \
+    --exclude-filtered -xl-sn !{sampleID_normal}_NORMAL --exclude-non-variants \
     -O !{caseID}.strelka2.PASSonly.TUMORonly.vcf.gz
 
     java -jar /data/shared/programmer/snpEff5.2/snpEff.jar GRCh38.99 !{caseID}.strelka2.PASSonly.vcf.gz > !{caseID}.strelka2.PASSonly.snpeff.vcf
@@ -740,12 +751,12 @@ process msisensor {
     path("*_msi*")
  
     script:
-    def assaytype=params.wgs ? "": "-e ${ROI}"
+    def datatype=params.wgs ? "": "-e ${ROI}"
     """
     msisensor-pro msi \
     -d ${msisensor_list} \
     -n ${bamN} -t ${bamT} \
-    $assaytype \
+    $datatype \
     -o ${caseID}_msi
     """
 }
@@ -807,7 +818,7 @@ process pcgr_v141 {
     path("*.pcgr_acmg.*")
     
     script:
-    def assaytype=params.wgs ? "--assay WGS": "--assay WES"
+    def datatype=params.wgs ? "--assay WGS": "--assay WES"
     //tumorsite=${pcgr_tumor} ? "--tumor_site ${pcgr_tumor}" : ""
     """
     singularity run -B ${s_bind} ${simgpath}/pcgr141.sif pcgr \
@@ -819,7 +830,7 @@ process pcgr_v141 {
     --all_reference_signatures \
     --estimate_tmb --estimate_msi_status \
     --exclude_dbsnp_nonsomatic \
-    $assaytype \
+    $datatype \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures \
     --tmb_algorithm nonsyn \
@@ -847,7 +858,7 @@ process pcgr_v203_mutect2 {
     path("*.pcgr.*.{xlsx,tsv,html}")
     
     script:
-    def assaytype=params.wgs ? "--assay WGS": "--assay WES"
+    def datatype=params.wgs ? "--assay WGS": "--assay WES"
     """
     pcgr \
     --input_vcf ${vcf} \
@@ -862,7 +873,7 @@ process pcgr_v203_mutect2 {
     --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
-    $assaytype \
+    $datatype \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures
     """
@@ -888,7 +899,7 @@ process pcgr_v203_strelka2 {
     
     script:
     
-    def assaytype=params.wgs ? "--assay WGS": "--assay WES"
+    def datatype=params.wgs ? "--assay WGS": "--assay WES"
     """
     pcgr \
     --input_vcf ${vcf} \
@@ -903,7 +914,7 @@ process pcgr_v203_strelka2 {
     --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
-    $assaytype \
+    $datatype \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures
     """
@@ -929,7 +940,7 @@ process pcgr_v203_strelka2_manualFilter {
     
     script:
     
-    def assaytype=params.wgs ? "--assay WGS": "--assay WES"
+    def datatype=params.wgs ? "--assay WGS": "--assay WES"
     """
     pcgr \
     --input_vcf ${vcf} \
@@ -944,11 +955,303 @@ process pcgr_v203_strelka2_manualFilter {
     --tmb_display missense_only \
     --estimate_msi \
     --exclude_dbsnp_nonsomatic \
-    $assaytype \
+    $datatype \
     --tumor_site ${pcgr_tumor} \
     --estimate_signatures
     """
 }
+
+
+/////// WGS ONLY PROCESSES ////////////////
+
+process cnvkit_somatic {
+    errorStrategy 'ignore'
+    tag "$caseID"
+
+    cpus 50
+    maxForks 3
+
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cnvkit_somatic/", mode: 'copy'
+
+    input: 
+    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+
+    output:
+    path("${caseID}.cnvkit/*")
+    //path("*.targetcoverage.cnn"), emit: cnvkit_cnn_out
+    tuple val(caseID), path("${caseID}.cnvkit/*.call.cns"), emit: CNVcalls
+    tuple val(caseID), path("${caseID}.cnvkit/*.cnr"), emit: CNVcnr
+    //path("${caseID}.cnvkit/*.cnn")
+    
+    // touch ${index}
+    script:
+    """
+    mv ${baiN} intermediate_crai
+    cp intermediate_crai ${baiN}
+    rm intermediate_crai
+
+    mv ${baiT} intermediate_crai2
+    cp intermediate_crai2 ${baiT}
+    rm intermediate_crai2
+
+    singularity run -B ${s_bind} ${simgpath}/cnvkit.sif cnvkit.py batch \
+    ${bamT} \
+    -n ${bamN} \
+    -m wgs \
+    -p ${task.cpus} \
+    -f ${genome_fasta} \
+    --annotate ${refFlat} \
+    --scatter --diagram \
+    -d ${caseID}.cnvkit/
+    cp ${caseID}.cnvkit/*.targetcoverage.cnn .
+    """
+}
+
+process cnvkitExportFiles {
+    errorStrategy 'ignore'
+    tag "$caseID"
+   // publishDir "${inhouse_SV}/CNVkit/raw_calls/", mode: 'copy', pattern: '*.cnvkit.vcf'
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cnvkit_somatic/", mode: 'copy'
+
+    input:
+    tuple val(caseID), path(cnvkit_calls)// from cnvkit_calls_out
+    tuple val(caseID), path(cnvkit_cnr)// from cnvkit_cnr_out
+
+    output:
+    path("*.vcf")
+    path("*.seg")
+    tuple val("${caseID}"), path("${caseID}.cnvkit.somatic.vcf"), emit: cnvkitForSVDB
+
+    script:
+    """
+    singularity run -B ${s_bind} ${simgpath}/cnvkit.sif cnvkit.py export vcf \
+    ${cnvkit_calls} \
+    -i ${caseID} \
+    -o ${caseID}.cnvkit.somatic.vcf
+
+    singularity run -B ${s_bind} ${simgpath}/cnvkit.sif cnvkit.py export seg \
+    ${cnvkit_cnr} \
+    -o ${caseID}.cnvkit.cnr.somatic.seg
+    """
+}
+
+process manta_somatic {
+    errorStrategy 'ignore'
+    tag "$caseID"
+
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/manta_somatic/", mode: 'copy'
+    //publishDir "${outputDir}/structuralVariants/manta/", mode: 'copy', pattern: "*.{AFanno,filtered}.*"
+
+    cpus 50
+    maxForks 3
+
+    input: 
+    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+
+    output:
+    tuple val(caseID), path("${caseID}.manta.*.{vcf,vcf.gz,gz.tbi}")
+    tuple val(caseID), path("${caseID}.manta.somaticSV.vcf.gz"), emit: purple
+    script:
+    """
+    singularity run -B ${s_bind} ${simgpath}/manta1.6_strelka2.9.10.sif configManta.py \
+    --normalBam ${bamN} \
+    --tumorBam ${bamT} \
+    --referenceFasta ${genome_fasta} \
+    --callRegions ${manta_callable_regions} \
+    --runDir manta
+
+    singularity run -B ${s_bind} ${simgpath}/manta1.6_strelka2.9.10.sif ./manta/runWorkflow.py -j ${task.cpus}
+
+    mv manta/results/variants/candidateSmallIndels.vcf.gz \
+    ${caseID}.manta.candidateSmallIndels.vcf.gz
+    
+    mv manta/results/variants/candidateSmallIndels.vcf.gz.tbi \
+    ${caseID}.manta.candidateSmallIndels.vcf.gz.tbi
+    
+    mv manta/results/variants/candidateSV.vcf.gz \
+    ${caseID}.manta.candidateSV.vcf.gz
+    
+    mv manta/results/variants/candidateSV.vcf.gz.tbi \
+    ${caseID}.manta.candidateSV.vcf.gz.tbi
+
+    mv manta/results/variants/diploidSV.vcf.gz \
+    ${caseID}.manta.diploidSV.vcf.gz
+    
+    mv manta/results/variants/diploidSV.vcf.gz.tbi \
+    ${caseID}.manta.diploidSV.vcf.gz.tbi
+
+    mv manta/results/variants/somaticSV.vcf.gz \
+    ${caseID}.manta.somaticSV.vcf.gz
+    
+    mv manta/results/variants/somaticSV.vcf.gz.tbi \
+    ${caseID}.manta.somaticSV.vcf.gz.tbi
+
+    gzip -dc ${caseID}.manta.diploidSV.vcf.gz > ${caseID}.manta.diploidSV.vcf
+    """
+}
+
+process hrd_scores2 {
+    errorStrategy 'ignore'
+    tag "$caseID"
+  
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/HRD/", mode: 'copy'
+
+    cpus 50
+    maxForks 3
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sigrap011/'
+
+    input:
+    tuple val(caseID), path(snv), path(cnv), path(sv)
+
+    output:
+    tuple val(caseID), path("${caseID}.HRD_SCORES.txt")
+    path("*.txt")
+    script:
+    """
+    #!/usr/bin/env Rscript
+    library(sigrap)
+    library(BSgenome.Hsapiens.UCSC.hg38)
+ 
+    chord=sigrap::chord_run(vcf.snv="${snv}",vcf.sv="${sv}", sv.caller="manta", sample.name="${caseID}", ref.genome="hg38")
+    hrdetect=sigrap::hrdetect_run(snvindel_vcf="${snv}",sv_vcf="${sv}", nm="${caseID}", cnv_tsv="${cnv}", genome="hg38")
+   
+    c1=as.data.frame(chord[2])
+    c2=c1[,1:6]
+    names(c2)=c("sample","CHORD_p_hrd","CHORD_hr_status","CHORD_hrdtype","CHORD_pBRCA1", "CHORD_pBRCA2")
+
+    d1=data.frame(hrdetect[1], hrdetect[2])
+    names(d1)=c("sample","HRDETECT_p_hrd")
+
+    m1=merge(c2,d1,by="sample")
+    if (m1[["HRDETECT_p_hrd"]]>0.7) m1[["HRDETECT_verdict"]]="HR_DEFICIENT" else m1[["HRDETECT_verdict"]]="HR_proficient"
+    write.table(m1,file="${caseID}.HRD_SCORES.txt",sep="\t",quote=F,row.names=F)
+
+    """
+}
+
+process cobalt {
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
+    errorStrategy 'ignore'
+    tag "$caseID"
+
+    cpus 16
+    input: 
+    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+    
+    output: 
+    tuple val(caseID), path("${caseID}_cobaltOut/")
+    
+    script:
+    """
+    java -jar /data/shared/programmer/hmftools/cobalt-1.14.1.jar \
+    -reference ${sampleID_normal} \
+    -reference_bam ${bamN} \
+    -tumor ${sampleID_tumor} \
+    -tumor_bam ${bamT} \
+    -ref_genome ${genome_fasta} \
+    -output_dir ${caseID}_cobaltOut \
+    -threads ${task.cpus} \
+    -gc_profile ${hmftools_data_dir_v534}/copy_number/GC_profile.1000bp.38.cnp
+    """
+}
+
+process amber {
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
+    errorStrategy 'ignore'
+    tag "$caseID"
+    cpus 12
+    
+    input: 
+    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+
+    output:
+    tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path("${caseID}_amberOut/")
+    
+    script:
+    """
+    java -jar /data/shared/programmer/hmftools/amber-3.9.jar \
+    -reference ${sampleID_normal} \
+    -reference_bam ${bamN} \
+    -tumor ${sampleID_tumor} \
+    -tumor_bam ${bamT} \
+    -ref_genome ${genome_fasta} \
+    -output_dir ${caseID}_amberOut \
+    -threads ${task.cpus} \
+    -ref_genome_version 38 \
+    -loci ${hmftools_data_dir_v534}/copy_number/GermlineHetPon.38.vcf.gz
+    """
+}
+
+process sage {
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
+    errorStrategy 'ignore'
+    tag "$caseID"
+
+    cpus 16
+    input: 
+    tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
+    
+    output: 
+    tuple val(caseID), path("${caseID}_sage.somatic.SNV_INDELS.vcf.gz")
+    
+    script:
+    """
+    java -jar /data/shared/programmer/hmftools/sage_v3.4.4.jar \
+    -reference ${sampleID_normal} \
+    -reference_bam ${bamN} \
+    -tumor ${sampleID_tumor} \
+    -tumor_bam ${bamT} \
+    -ref_genome ${genome_fasta} \
+    -ref_genome_version 38 \
+    -threads ${task.cpus} \
+    -ensembl_data_dir ${hmftools_data_dir_v534}/common/ensembl_data/ \
+    -high_confidence_bed ${hmftools_data_dir_v534}/variants/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed.gz \
+    -hotspots ${hmftools_data_dir_v534}/variants/KnownHotspots.somatic.38.vcf.gz \
+    -panel_bed ${hmftools_data_dir_v534}/variants/ActionableCodingPanel.38.bed.gz \
+    -output_vcf ${caseID}_sage.somatic.SNV_INDELS.vcf.gz
+    """
+}
+process purple {
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
+    errorStrategy 'ignore'
+    tag "$caseID"
+    cpus 12
+
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos0699/' 
+
+    input:
+    tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
+
+    output:
+    tuple val(caseID), path("${caseID}_purple/")
+    tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_for_hrd
+    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv")
+    script:
+    """
+
+    java -jar /data/shared/programmer/hmftools/purple_v3.8.4.jar \
+    -reference ${sampleID_normal} \
+    -tumor ${sampleID_tumor} \
+    -ref_genome ${genome_fasta} \
+    -output_dir ${caseID}_purple \
+    -threads ${task.cpus} \
+    -ref_genome_version 38 \
+    -somatic_sv_vcf ${manta_sv} \
+    -somatic_vcf ${sage} \
+    -gc_profile ${hmftools_data_dir_v534}/copy_number/GC_profile.1000bp.38.cnp \
+    -ensembl_data_dir ${hmftools_data_dir_v534}/common/ensembl_data/ \
+    -amber ${amber} \
+    -cobalt ${cobalt} \
+    -circos circos
+
+    cp ${caseID}_purple/${sampleID_tumor}*.somatic.tsv ${caseID}.purple.cnv.somatic.tsv
+    cp ${caseID}_purple/${sampleID_tumor}*.qc ${caseID}.purple.qc
+    cp ${caseID}_purple/${sampleID_tumor}*.purity.tsv ${caseID}.purple.purity.tsv
+    """
+
+}
+
+
 
 /////////// SUBWORKFLOWS
 
@@ -992,15 +1295,32 @@ workflow SUB_DNA_TUMOR_NORMAL {
     //tumorNormal_bam_ch.join(strelka2.out.strelkarenameVCF).view()
 
     msisensor(tumorNormal_bam_ch)
-  //  sequenza(tumorNormal_bam_ch)
-   // sequenza_R_output(sequenza.out)
+
     sequenza_conda(tumorNormal_bam_ch)
     sequenza_R_output_conda(sequenza_conda.out)
     pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_strelka2(strelka2_edits.out.strelka2_PASS.join(caseID_pcgrID))
     pcgr_v203_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
+
+    if (params.wgs) {
+        cnvkit_somatic(tumorNormal_bam_ch)
+        cnvkitExportFiles(cnvkit_somatic.out.CNVcalls, cnvkit_somatic.out.CNVcnr)
+        manta_somatic(tumorNormal_bam_ch)
+        amber(tumorNormal_bam_ch)
+        cobalt(tumorNormal_bam_ch)
+        sage(tumorNormal_bam_ch)
+        amber.out.join(cobalt.out).join(manta_somatic.out.purple).join(sage.out)
+        | set {purple_input}
+        
+        purple(purple_input)
+ 
+        sage.out.join(purple.out.purple_for_hrd).join(manta_somatic.out.purple)
+        | set {hrd_purple_input}
+        
+        hrd_scores2(hrd_purple_input)
+    }
+
     emit:    
     mutect2_out=mutect2.out.mutect2_ALL
-
 }
