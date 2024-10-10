@@ -507,6 +507,9 @@ process multiQC {
 process tb_haplotypecaller {
     errorStrategy 'ignore'
     cpus 4
+    if (params.server=="lnx01") {
+    maxForks 2
+    }
     tag "$sampleID"
     publishDir "${caseID}/${outputDir}/variantcalls/", mode: 'copy', pattern: "*.haplotypecaller.*"
     publishDir "${caseID}/${outputDir}/variantcalls/gvcf/", mode: 'copy', pattern: "*.g.*"
@@ -545,7 +548,9 @@ process tb_haplotypecaller {
 // NB: Disabled full wGS germline var calling for now (too slow - requires implementation of splitIntervals: $datatype \)
 process mutect2 {
     tag "$caseID"
-
+    if (params.server=="lnx01") {
+    maxForks 2
+    }
     publishDir "${caseID}/${outputDir}/variantcalls/", mode: 'copy'
     publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.for.VarSeq.*"
     publishDir "${caseID}/${outputDir}/QC/mutect2_filtering/", mode: 'copy', pattern: "*.{table,stats,tsv}"
@@ -643,6 +648,7 @@ process strelka2 {
 
     if (params.server=="lnx01") {
             conda '/data/shared/programmer/miniconda3/envs/py310'
+            maxForks 2
     }
     
     input: 
@@ -746,7 +752,9 @@ process msisensor {
     publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*_msi"
 
     conda '/lnx01_data3/shared/programmer/miniconda3/envs/msisensorPro120'
-
+    if (params.server=="lnx01") {
+    maxForks 2
+    }
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT), val(typeT)
 
@@ -768,7 +776,9 @@ process msisensor {
 process sequenza_conda {
     errorStrategy 'ignore'
     tag "$caseID"
-    
+    if (params.server=="lnx01") {
+    maxForks 2
+    }
     input:
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
     output:
@@ -972,8 +982,10 @@ process cnvkit_somatic {
     errorStrategy 'ignore'
     tag "$caseID"
 
-    cpus 50
-    maxForks 3
+    cpus 12
+    if (params.server=="lnx01") {
+    maxForks 2
+    }
 
     publishDir "${caseID}/${outputDir}/NEWTOOLS/cnvkit_somatic/", mode: 'copy'
 
@@ -1047,7 +1059,10 @@ process manta_somatic {
     //publishDir "${outputDir}/structuralVariants/manta/", mode: 'copy', pattern: "*.{AFanno,filtered}.*"
 
     cpus 12
-    maxForks 3
+
+    if (params.server=="lnx01") {
+    maxForks 1
+    }
 
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
@@ -1137,7 +1152,9 @@ process cobalt {
     publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
-
+    if (params.server=="lnx01") {
+    maxForks 1
+    }
     cpus 16
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
@@ -1163,6 +1180,9 @@ process amber {
     publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
+    if (params.server=="lnx01") {
+    maxForks 1
+    }
     cpus 12
     
     input: 
@@ -1190,7 +1210,9 @@ process sage {
     publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
-
+    if (params.server=="lnx01") {
+    maxForks 2
+    }
     cpus 16
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
