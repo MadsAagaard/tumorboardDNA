@@ -758,6 +758,7 @@ process msisensor {
     -d ${msisensor_list} \
     -n ${bamN} -t ${bamT} \
     $datatype \
+    -g ${genome_fasta} \
     -o ${caseID}_msi
     """
 }
