@@ -314,14 +314,15 @@ workflow {
         normal_cram_ch.concat(tumor_cram_ch)
         .set {cram_per_sample_ch}
     }
-
-    inputFiles_symlinks_cram(cram_per_sample_ch)
-    tb_haplotypecaller(normal_cram_ch)
+    
+    if (!params.fastqInput && !params.fastq) {
+        inputFiles_symlinks_cram(cram_per_sample_ch)
+    }
 
     if (!params.skipQC) {
         SUB_DNA_QC(cram_per_sample_ch)
     }
-
+    tb_haplotypecaller(normal_cram_ch)
     SUB_PAIRED_TN(tumorNormal_cram_ch, caseID_pcgrID)
 }
 
