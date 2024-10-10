@@ -844,7 +844,7 @@ process pcgr_v141 {
 
 process pcgr_v203_mutect2 {
     errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR203/", mode: 'copy', pattern: "*.pcgr.*"
+    publishDir "${caseID}/${outputDir}/PCGR203/mutect2/", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
   
@@ -885,7 +885,7 @@ process pcgr_v203_mutect2 {
 
 process pcgr_v203_strelka2 {
     errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR203/", mode: 'copy', pattern: "*.pcgr.*"
+    publishDir "${caseID}/${outputDir}/PCGR203/strelka2/", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
     if (params.server=="lnx01") {
@@ -926,7 +926,7 @@ process pcgr_v203_strelka2 {
 
 process pcgr_v203_strelka2_manualFilter {
     errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR203/", mode: 'copy', pattern: "*.pcgr.*"
+    publishDir "${caseID}/${outputDir}/PCGR203/strelka2_manual", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
     if (params.server=="lnx01") {
@@ -1229,7 +1229,7 @@ process purple {
     output:
     tuple val(caseID), path("${caseID}_purple/")
     tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_for_hrd
-    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv")
+    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.circos.png")
     script:
     """
 
@@ -1251,6 +1251,7 @@ process purple {
     cp ${caseID}_purple/${sampleID_tumor}*.somatic.tsv ${caseID}.purple.cnv.somatic.tsv
     cp ${caseID}_purple/${sampleID_tumor}*.qc ${caseID}.purple.qc
     cp ${caseID}_purple/${sampleID_tumor}*.purity.tsv ${caseID}.purple.purity.tsv
+    cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.circos.png
     """
 
 }
