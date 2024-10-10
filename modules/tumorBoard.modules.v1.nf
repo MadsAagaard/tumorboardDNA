@@ -523,7 +523,7 @@ process tb_haplotypecaller {
     -I ${cram} \
     -R ${genome_fasta} \
     -ERC GVCF \
-    -L ${ROI} \ 
+    -L ${ROI} \
     --smith-waterman FASTEST_AVAILABLE \
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
