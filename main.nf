@@ -437,7 +437,7 @@ workflow {
         .set { tumorNormal_bam_ch }
       // above structure: tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
         
-        SUB_PAIRED_TN(tumorNormal_bam_ch, caseID_pcgrID)
+        SUB_PAIRED_TN(tumorNormal_cram_ch,tumorNormal_bam_ch, caseID_pcgrID)
     }
 }
 

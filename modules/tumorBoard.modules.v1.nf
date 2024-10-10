@@ -1286,6 +1286,7 @@ workflow SUB_DNA_QC {
 
 workflow SUB_PAIRED_TN {
     take:
+    tumorNormal_cram_ch
     tumorNormal_bam_ch
     caseID_pcgrID
     main:
@@ -1304,12 +1305,12 @@ workflow SUB_PAIRED_TN {
     pcgr_v203_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
 
     if (params.wgs) {
-        cnvkit_somatic(tumorNormal_bam_ch)
+        cnvkit_somatic(tumorNormal_cram_ch)
         cnvkitExportFiles(cnvkit_somatic.out.CNVcalls, cnvkit_somatic.out.CNVcnr)
-        manta_somatic(tumorNormal_bam_ch)
-        amber(tumorNormal_bam_ch)
-        cobalt(tumorNormal_bam_ch)
-        sage(tumorNormal_bam_ch)
+        manta_somatic(tumorNormal_cram_ch)
+        amber(tumorNormal_cram_ch)
+        cobalt(tumorNormal_cram_ch)
+        sage(tumorNormal_cram_ch)
         amber.out.join(cobalt.out).join(manta_somatic.out.purple).join(sage.out)
         | set {purple_input}
         
