@@ -308,10 +308,10 @@ workflow {
         .filter{it =~ /TUMOR/}  
         .set {tumor_cram_ch }
 
-        normal_ch.join(tumor_ch)
+        normal_cram_ch.join(tumor_cram_ch)
         .set { tumorNormal_cram_ch }
 
-        normal_ch.concat(tumor_ch)
+        normal_cram_ch.concat(tumor_cram_ch)
         .set {cram_per_sample_ch}
     }
 
