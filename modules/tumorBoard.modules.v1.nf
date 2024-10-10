@@ -105,6 +105,7 @@ switch (params.genome) {
         }
 
         // Gene and transcript annotation files:
+        refFlat="/data/shared/genomes/hg38/gene.annotations/refFlat.txt"
 
         gencode_gtf = "/data/shared/genomes/hg38/gene.annotations/gencode.v36.annotation.gtf"
         gencode_gff3 = "/data/shared/genomes/hg38/gene.annotations/gencode.v36.annotation.gff3"
