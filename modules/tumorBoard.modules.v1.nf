@@ -1354,7 +1354,7 @@ workflow SUB_DNA_QC {
 
 }
 
-//workflow SUB_PAIRED_TN {
+workflow SUB_PAIRED_TN_TEST {
     take:
     tumorNormal_cram_ch
     caseID_pcgrID
@@ -1374,7 +1374,7 @@ workflow SUB_DNA_QC {
     pcgr_v203_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
 
     pcgr_v212_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
-/*
+
     if (params.wgs) {
        // cnvkit_somatic(tumorNormal_cram_ch)
         //cnvkitExportFiles(cnvkit_somatic.out.CNVcalls, cnvkit_somatic.out.CNVcnr)
@@ -1392,7 +1392,6 @@ workflow SUB_DNA_QC {
         
         hrd_scores2(hrd_purple_input)
     }
-*/
     emit:    
     mutect2_out=mutect2.out.mutect2_ALL
 }
