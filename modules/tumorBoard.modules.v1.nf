@@ -143,6 +143,7 @@ switch (params.genome) {
         pcgr_data_dir="/data/shared/genomes/hg38/program_DBs/PCGR/"
         pcgr_VEP="/data/shared/genomes/hg38/program_DBs/PCGRv2/VEP_112_GRCh38_merged/"
         pcgr_data_dir2="/data/shared/genomes/hg38/program_DBs/PCGRv2/20240621/"
+        pcgr_data_dir3="/data/shared/genomes/hg38/program_DBs/PCGRv2/20240927/"
         hmftools_data_dir_v534="/data/shared/genomes/hg38/program_DBs/hmftools/v5_34/ref/38"
         hmftools_data_dir_v60="/data/shared/genomes/hg38/program_DBs/hmftools/v6_0/ref/38"
 
@@ -977,6 +978,46 @@ process pcgr_v203_strelka2_manualFilter {
     """
 }
 
+process pcgr_v212_mutect2 {
+    errorStrategy 'ignore'
+    publishDir "${caseID}/${outputDir}/PCGR212/mutect2/", mode: 'copy', pattern: "*.pcgr.*"
+
+    //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
+   
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr212'
+   
+    input:
+    tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
+
+    output:
+    path("*.pcgr.*")
+    
+    script:
+    def tumorsite=params.pcgrtumor ? "--tumor_site ${params.pcgrtumor}" : ""
+    def rnaexp=params.rnaExp ? "--input_rna_expression ${rna}" : ""
+    """
+    bcftools index -t ${vcf}
+
+    pcgr \
+    --input_vcf ${vcf} \
+    --refdata_dir  ${pcgr_data_dir3} \
+    --output_dir . \
+    --vep_dir ${pcgr_VEP} \
+    --genome_assembly ${grch_assembly} \
+    --sample_id ${sampleID} \
+    --min_mutations_signatures 100 \
+    --all_reference_signatures \
+    --estimate_tmb \
+    --tmb_display coding_non_silent \
+    --estimate_msi \
+    --exclude_dbsnp_nonsomatic \
+    --assay WES \
+    --pcgrr_conda /lnx01_data3/shared/programmer/miniconda3/envs/pcgrr212 \
+    --estimate_signatures \
+    $tumorsite \
+    $rnaexp
+    """
+}
 
 /////// WGS ONLY PROCESSES ////////////////
 
@@ -1331,6 +1372,7 @@ workflow SUB_PAIRED_TN {
     pcgr_v203_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_strelka2(strelka2_edits.out.strelka2_PASS.join(caseID_pcgrID))
     pcgr_v203_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
+    pcgr_v212_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
 
     if (params.wgs) {
        // cnvkit_somatic(tumorNormal_cram_ch)

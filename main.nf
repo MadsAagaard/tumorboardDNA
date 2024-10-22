@@ -70,8 +70,6 @@ switch (params.assaytype) {
     break;
 }
 
-
-
 def helpMessage() {
     log.info"""
 
