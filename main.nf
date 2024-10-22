@@ -255,6 +255,7 @@ channel.fromPath(params.samplesheet)
         .set { cram_normal }
         //above structure: caseID, NPN_EV8, CRAM, CRAI, NORMAL
         
+
         tumorID_caseID
         .join(sampleID_cram).join(sampleID_crai)
         .map {tuple(it[1],it[0]+"_${datapattern}",it[2],it[3],"TUMOR")}
@@ -282,8 +283,8 @@ channel.fromPath(params.samplesheet)
         .set { cram_per_sample_ch }
 
     }
-
-
+cram_normal.view()
+caseID_normalID.view()
 log.info """\
 
 ========================================================
