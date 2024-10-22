@@ -301,7 +301,7 @@ include {
          pcgr_v212_mutect2;
          SUB_DNA_PREPROCESS;
          SUB_DNA_QC;
-         SUB_PAIRED_TN_TEST } from "./modules/tumorBoard.modules.v1.nf" 
+         SUB_PAIRED_TN } from "./modules/tumorBoard.modules.v1.nf" 
 
 
 workflow {
@@ -332,7 +332,7 @@ workflow {
         SUB_DNA_QC(cram_per_sample_ch)
     }
     tb_haplotypecaller(normal_cram_ch)
-    SUB_PAIRED_TN_TEST(tumorNormal_cram_ch, caseID_pcgrID)
+    SUB_PAIRED_TN(tumorNormal_cram_ch, caseID_pcgrID)
 }
 
 

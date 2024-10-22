@@ -1354,7 +1354,7 @@ workflow SUB_DNA_QC {
 
 }
 
-workflow SUB_PAIRED_TN_TEST {
+workflow SUB_PAIRED_TN {
     take:
     tumorNormal_cram_ch
     caseID_pcgrID
@@ -1368,7 +1368,7 @@ workflow SUB_PAIRED_TN_TEST {
 
     sequenza_conda(tumorNormal_cram_ch)
     sequenza_R_output_conda(sequenza_conda.out)
-    //pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
+    pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_strelka2(strelka2_edits.out.strelka2_PASS.join(caseID_pcgrID))
     pcgr_v203_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
