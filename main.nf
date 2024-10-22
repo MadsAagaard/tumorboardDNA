@@ -47,6 +47,15 @@ switch (params.server) {
     break;
 }
 
+if (params.wgs) {
+    datapattern="WG4_NGC,WG4,WG3"
+}
+
+if (!params.wgs) {
+    datapattern="EV8,EV8_BEH"
+}
+
+/*
 switch (params.assaytype) {
 
     case 'NGC':
@@ -60,6 +69,7 @@ switch (params.assaytype) {
     datapattern="EV8"
     break;
 }
+*/
 
 
 def helpMessage() {
