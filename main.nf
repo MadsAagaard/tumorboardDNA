@@ -298,6 +298,7 @@ include {
 
          inputFiles_symlinks_cram;
          tb_haplotypecaller;
+         pcgr_v212_mutect2;
          SUB_DNA_PREPROCESS;
          SUB_DNA_QC;
          SUB_PAIRED_TN } from "./modules/tumorBoard.modules.v1.nf" 
