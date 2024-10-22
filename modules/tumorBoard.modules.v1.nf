@@ -574,7 +574,7 @@ process mutect2 {
     tuple val(caseID), path("${caseID}.mutect2.PASSonly.chr1_22_XY.vcf.gz"), path("${caseID}.mutect2.PASSonly.chr1_22_XY.vcf.gz.tbi"), emit: mutect2_PASS_reduced
 
     script:
-    def datatype=params.wgs ? "-L ${ROI}" : "-L ${ROI}"
+    //def datatype=params.wgs ? "-L ${ROI}" : "-L ${ROI}"
     """
     ${gatk_exec} --java-options "-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads=30" Mutect2 \
     -R ${genome_fasta} \
@@ -583,7 +583,7 @@ process mutect2 {
     -normal ${sampleID_normal} \
     --germline-resource ${mutect_gnomad} \
     --panel-of-normals ${gatk_wgs_pon} \
-    $datatype \
+    -L ${ROI} \
     --dont-use-soft-clipped-bases \
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
