@@ -1378,7 +1378,7 @@ workflow SUB_PAIRED_TN {
     if (params.wgs) {
        // cnvkit_somatic(tumorNormal_cram_ch)
         //cnvkitExportFiles(cnvkit_somatic.out.CNVcalls, cnvkit_somatic.out.CNVcnr)
-        manta_somatic(tumorNormal_cram_ch)
+     //   manta_somatic(tumorNormal_cram_ch)
         amber(tumorNormal_cram_ch)
         cobalt(tumorNormal_cram_ch)
         sage(tumorNormal_cram_ch)
