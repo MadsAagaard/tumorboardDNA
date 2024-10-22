@@ -46,7 +46,7 @@ switch (params.server) {
         dataArchive="/lnx01_data2/shared/dataArchive";        
     break;
 }
-
+/*
 if (params.wgs) {
     datapattern="WG4_NGC,WG4,WG3"
 }
@@ -54,8 +54,8 @@ if (params.wgs) {
 if (!params.wgs) {
     datapattern="EV8,EV8_BEH"
 }
+*/
 
-/*
 switch (params.assaytype) {
 
     case 'NGC':
@@ -69,7 +69,7 @@ switch (params.assaytype) {
     datapattern="EV8"
     break;
 }
-*/
+
 
 
 def helpMessage() {
@@ -283,8 +283,7 @@ channel.fromPath(params.samplesheet)
         .set { cram_per_sample_ch }
 
     }
-cram_normal.view()
-caseID_normalID.view()
+
 log.info """\
 
 ========================================================
