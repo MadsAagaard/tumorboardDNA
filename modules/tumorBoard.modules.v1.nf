@@ -158,6 +158,8 @@ switch (params.genome) {
 
         ROI="/data/shared/genomes/hg38/interval.files/exome.ROIs/211130.hg38.refseq.gencode.fullexons.50bp.SM.bed"
         
+        inhouse127_geneIntervals="/data/shared/genomes/hg38/interval.files/geneIntervals/241022_inhouse127genes.3col.SM.bed"
+
         //ROI="/data/shared/genomes/hg38/interval.files/210129.hg38.gencode36.codingexons.20bp.SM.bed"
 
         callable_regions="/data/shared/genomes/hg38/interval.files/GATK.hg38.callable.regions.bed"
@@ -1113,6 +1115,10 @@ process manta_somatic {
     output:
     tuple val(caseID), path("${caseID}.manta.*.{vcf,vcf.gz,gz.tbi}")
     tuple val(caseID), path("${caseID}.manta.somaticSV.vcf.gz"), emit: purple
+    tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.vcf.gz"), emit: mantaSV_pass
+    tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz"), emit: mantaSV_pass_inhouse
+
+
     script:
     """
     singularity run -B ${s_bind} ${simgpath}/manta1.6_strelka2.9.10.sif configManta.py \
@@ -1142,21 +1148,35 @@ process manta_somatic {
     mv manta/results/variants/diploidSV.vcf.gz.tbi \
     ${caseID}.manta.diploidSV.vcf.gz.tbi
 
+    gzip -dc ${caseID}.manta.diploidSV.vcf.gz > ${caseID}.manta.diploidSV.vcf
+
     mv manta/results/variants/somaticSV.vcf.gz \
     ${caseID}.manta.somaticSV.vcf.gz
     
     mv manta/results/variants/somaticSV.vcf.gz.tbi \
     ${caseID}.manta.somaticSV.vcf.gz.tbi
 
-    gzip -dc ${caseID}.manta.diploidSV.vcf.gz > ${caseID}.manta.diploidSV.vcf
+    ${gatk_exec} SelectVariants \
+    -R ${genome_fasta} \
+    -V ${caseID}.manta.somaticSV.vcf.gz \
+    --exclude-filtered \
+    -O ${caseID}.manta.somaticSV.PASSonly.vcf.gz
+
+    ${gatk_exec} SelectVariants \
+    -R ${genome_fasta} \
+    -V ${caseID}.manta.somaticSV.vcf.gz \
+    -L ${inhouse127_geneIntervals} \
+    --exclude-filtered \
+    -O ${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz
+
     """
 }
 
-process hrd_scores2 {
+process hrd_scores_fullSV {
     errorStrategy 'ignore'
     tag "$caseID"
   
-    publishDir "${caseID}/${outputDir}/NEWTOOLS/HRD/", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/HRD_FULLSV/", mode: 'copy'
 
     cpus 4
     maxForks 3
@@ -1190,6 +1210,46 @@ process hrd_scores2 {
 
     """
 }
+
+process hrd_scores_inhouseSV {
+    errorStrategy 'ignore'
+    tag "$caseID"
+  
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/HRD_INHOUSE127/", mode: 'copy'
+
+    cpus 4
+    maxForks 3
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sigrap011/'
+
+    input:
+    tuple val(caseID), path(snv), path(cnv), path(sv)
+
+    output:
+    tuple val(caseID), path("${caseID}.HRD_SCORES.txt")
+    path("*.txt")
+    script:
+    """
+    #!/usr/bin/env Rscript
+    library(sigrap)
+    library(BSgenome.Hsapiens.UCSC.hg38)
+ 
+    chord=sigrap::chord_run(vcf.snv="${snv}",vcf.sv="${sv}", sv.caller="manta", sample.name="${caseID}", ref.genome="hg38")
+    hrdetect=sigrap::hrdetect_run(snvindel_vcf="${snv}",sv_vcf="${sv}", nm="${caseID}", cnv_tsv="${cnv}", genome="hg38")
+   
+    c1=as.data.frame(chord[2])
+    c2=c1[,1:6]
+    names(c2)=c("sample","CHORD_p_hrd","CHORD_hr_status","CHORD_hrdtype","CHORD_pBRCA1", "CHORD_pBRCA2")
+
+    d1=data.frame(hrdetect[1], hrdetect[2])
+    names(d1)=c("sample","HRDETECT_p_hrd")
+
+    m1=merge(c2,d1,by="sample")
+    if (m1[["HRDETECT_p_hrd"]]>0.7) m1[["HRDETECT_verdict"]]="HR_DEFICIENT" else m1[["HRDETECT_verdict"]]="HR_proficient"
+    write.table(m1,file="${caseID}.HRD_SCORES.txt",sep="\t",quote=F,row.names=F)
+
+    """
+}
+
 
 process cobalt {
     publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
@@ -1280,8 +1340,8 @@ process sage {
     -output_vcf ${caseID}_sage.somatic.SNV_INDELS.vcf.gz
     """
 }
-process purple {
-    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
+process purple_full {
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/PURPLE_FULL", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
     cpus 12
@@ -1320,6 +1380,88 @@ process purple {
     """
 
 }
+
+process purple_pass {
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/PURPLE_PASS/", mode: 'copy'
+    errorStrategy 'ignore'
+    tag "$caseID"
+    cpus 12
+
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos0699/' 
+
+    input:
+    tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
+
+    output:
+    tuple val(caseID), path("${caseID}_purple/")
+    tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_for_hrd
+    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.circos.png")
+    script:
+    """
+
+    java -jar /data/shared/programmer/hmftools/purple_v3.8.4.jar \
+    -reference ${sampleID_normal} \
+    -tumor ${sampleID_tumor} \
+    -ref_genome ${genome_fasta} \
+    -output_dir ${caseID}_purple \
+    -threads ${task.cpus} \
+    -ref_genome_version 38 \
+    -somatic_sv_vcf ${manta_sv} \
+    -somatic_vcf ${sage} \
+    -gc_profile ${hmftools_data_dir_v534}/copy_number/GC_profile.1000bp.38.cnp \
+    -ensembl_data_dir ${hmftools_data_dir_v534}/common/ensembl_data/ \
+    -amber ${amber} \
+    -cobalt ${cobalt} \
+    -circos circos
+
+    cp ${caseID}_purple/${sampleID_tumor}*.somatic.tsv ${caseID}.purple.cnv.somatic.tsv
+    cp ${caseID}_purple/${sampleID_tumor}*.qc ${caseID}.purple.qc
+    cp ${caseID}_purple/${sampleID_tumor}*.purity.tsv ${caseID}.purple.purity.tsv
+    cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.circos.png
+    """
+
+}
+
+process purple_inhouse {
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/PURPLE_PASS_INHOUSE/", mode: 'copy'
+    errorStrategy 'ignore'
+    tag "$caseID"
+    cpus 12
+
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos0699/' 
+
+    input:
+    tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
+
+    output:
+    tuple val(caseID), path("${caseID}_purple/")
+    tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_inhouse_for_hrd
+    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.circos.png")
+    script:
+    """
+
+    java -jar /data/shared/programmer/hmftools/purple_v3.8.4.jar \
+    -reference ${sampleID_normal} \
+    -tumor ${sampleID_tumor} \
+    -ref_genome ${genome_fasta} \
+    -output_dir ${caseID}_purple \
+    -threads ${task.cpus} \
+    -ref_genome_version 38 \
+    -somatic_sv_vcf ${manta_sv} \
+    -somatic_vcf ${sage} \
+    -gc_profile ${hmftools_data_dir_v534}/copy_number/GC_profile.1000bp.38.cnp \
+    -ensembl_data_dir ${hmftools_data_dir_v534}/common/ensembl_data/ \
+    -amber ${amber} \
+    -cobalt ${cobalt} \
+    -circos circos
+
+    cp ${caseID}_purple/${sampleID_tumor}*.somatic.tsv ${caseID}.purple.cnv.somatic.tsv
+    cp ${caseID}_purple/${sampleID_tumor}*.qc ${caseID}.purple.qc
+    cp ${caseID}_purple/${sampleID_tumor}*.purity.tsv ${caseID}.purple.purity.tsv
+    cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.circos.png
+    """
+}
+
 
 
 
@@ -1382,15 +1524,22 @@ workflow SUB_PAIRED_TN {
         amber(tumorNormal_cram_ch)
         cobalt(tumorNormal_cram_ch)
         sage(tumorNormal_cram_ch)
+
         amber.out.join(cobalt.out).join(manta_somatic.out.purple).join(sage.out)
         | set {purple_input}
-        
-        purple(purple_input)
+
+        purple_full(purple_input)
  
         sage.out.join(purple.out.purple_for_hrd).join(manta_somatic.out.purple)
         | set {hrd_purple_input}
-        
-        hrd_scores2(hrd_purple_input)
+        hrd_scores_fullSV(hrd_purple_input)
+
+        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass_inhouse).join(sage.out)
+        | set {purple_inhouse_input}
+        hrd_scores_inhouseSV(purple_inhouse_input)
+
+
+
     }
     emit:    
     mutect2_out=mutect2.out.mutect2_ALL
