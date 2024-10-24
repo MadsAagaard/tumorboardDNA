@@ -1114,7 +1114,7 @@ process manta_somatic {
 
     output:
     tuple val(caseID), path("${caseID}.manta.*.{vcf,vcf.gz,gz.tbi}")
-    tuple val(caseID), path("${caseID}.manta.somaticSV.vcf.gz"), emit: purple
+    tuple val(caseID), path("${caseID}.manta.somaticSV.vcf.gz"), emit: mantaSV_all
     tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.vcf.gz"), emit: mantaSV_pass
     tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz"), emit: mantaSV_pass_inhouse
 
@@ -1353,7 +1353,7 @@ process purple_full {
 
     output:
     tuple val(caseID), path("${caseID}_purple/")
-    tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_for_hrd
+    tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_full_for_hrd
     tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.circos.png")
     script:
     """
@@ -1395,7 +1395,7 @@ process purple_pass {
     output:
     tuple val(caseID), path("${caseID}_purple/")
     tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_for_hrd
-    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.circos.png")
+    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.PASS.circos.png")
     script:
     """
 
@@ -1417,7 +1417,7 @@ process purple_pass {
     cp ${caseID}_purple/${sampleID_tumor}*.somatic.tsv ${caseID}.purple.cnv.somatic.tsv
     cp ${caseID}_purple/${sampleID_tumor}*.qc ${caseID}.purple.qc
     cp ${caseID}_purple/${sampleID_tumor}*.purity.tsv ${caseID}.purple.purity.tsv
-    cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.circos.png
+    cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.PASS.circos.png
     """
 
 }
@@ -1436,7 +1436,7 @@ process purple_inhouse {
     output:
     tuple val(caseID), path("${caseID}_purple/")
     tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_inhouse_for_hrd
-    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.circos.png")
+    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.INHOUSE127.circos.png")
     script:
     """
 
@@ -1458,7 +1458,7 @@ process purple_inhouse {
     cp ${caseID}_purple/${sampleID_tumor}*.somatic.tsv ${caseID}.purple.cnv.somatic.tsv
     cp ${caseID}_purple/${sampleID_tumor}*.qc ${caseID}.purple.qc
     cp ${caseID}_purple/${sampleID_tumor}*.purity.tsv ${caseID}.purple.purity.tsv
-    cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.circos.png
+    cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.INHOUSE127.circos.png
     """
 }
 
@@ -1525,16 +1525,28 @@ workflow SUB_PAIRED_TN {
         cobalt(tumorNormal_cram_ch)
         sage(tumorNormal_cram_ch)
 
-        amber.out.join(cobalt.out).join(manta_somatic.out.purple).join(sage.out)
-        | set {purple_input}
+        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_all).join(sage.out)
+        | set {purple_full_input}
 
-        purple_full(purple_input)
+        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass).join(sage.out)
+        | set {purple_pass_input}
+
+        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass_inhouse).join(sage.out)
+        | set {purple_inhouse_input}
+
+        purple_full(purple_full_input)
+        purple_pass(purple_pass_input)
+        purple_inhouse(purple_inhouse_input)
+        
+        sage.out.join(purple_full.out.purple_full_for_hrd).join(manta_somatic.out.mantaSV_all)
+        | set {hrd_full_input}
+        
+        sage.out.join(purple_inhouse.out.purple_inhouse_for_hrd).join(manta_somatic.out.mantaSV_pass_inhouse)
+        | set {hrd_inhouse_input}
 
 
-        sage.out.join(purple_full.out.purple_for_hrd).join(manta_somatic.out.purple)
-        | set {hrd_purple_input}
-        hrd_scores_fullSV(hrd_purple_input)
-
+        hrd_scores_fullSV(hrd_full_input)
+        hrd_scores_inhouseSV(hrd_inhouse_input)
 //        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass_inhouse).join(sage.out)
   //      | set {purple_inhouse_input}
     //    hrd_scores_inhouseSV(purple_inhouse_input)
