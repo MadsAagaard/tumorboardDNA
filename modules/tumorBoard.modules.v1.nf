@@ -1118,7 +1118,7 @@ process manta_somatic {
     tuple val(caseID), path("${caseID}.manta.somaticSV.vcf.gz"), emit: mantaSV_all
     tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.vcf.gz"), emit: mantaSV_pass
     tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz"), emit: mantaSV_pass_inhouse
-
+    tuple val(caseID), path("${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz"), emit: mantaSV_inhouse
 
     script:
     """
@@ -1170,8 +1170,14 @@ process manta_somatic {
     --exclude-filtered \
     -O ${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz
 
+    bcftools filter \
+    -R {inhouse127_geneIntervals} \
+    -o ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz \
+    ${caseID}.manta.somaticSV.vcf.gz
     """
 }
+
+//bcftools filter -R {inhouse127_geneIntervals} -o ${caseID}.manta.somaticSV.PASSonly.bcftools.Inhouse127.vcf.gz ${caseID}.manta.somaticSV.vcf.gz
 
 process hrd_scores_fullSV {
     errorStrategy 'ignore'
@@ -1534,7 +1540,7 @@ workflow SUB_PAIRED_TN {
         amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass).join(sage.out)
         | set {purple_pass_input}
 
-        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass_inhouse).join(sage.out)
+        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_inhouse).join(sage.out)
         | set {purple_inhouse_input}
 
         purple_full(purple_full_input)
@@ -1544,12 +1550,12 @@ workflow SUB_PAIRED_TN {
         sage.out.join(purple_full.out.purple_full_for_hrd).join(manta_somatic.out.mantaSV_all)
         | set {hrd_full_input}
         
-        sage.out.join(purple_inhouse.out.purple_inhouse_for_hrd).join(manta_somatic.out.mantaSV_pass_inhouse)
+        sage.out.join(purple_inhouse.out.purple_inhouse_for_hrd).join(manta_somatic.out.mantaSV_inhouse)
         | set {hrd_inhouse_input}
 
         hrd_scores_fullSV(hrd_full_input)
         hrd_scores_inhouseSV(hrd_inhouse_input)
-    //        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass_inhouse).join(sage.out)
+    //        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_inhouse).join(sage.out)
   //      | set {purple_inhouse_input}
     //    hrd_scores_inhouseSV(purple_inhouse_input)
 
