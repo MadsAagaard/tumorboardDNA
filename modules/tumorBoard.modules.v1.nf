@@ -599,6 +599,7 @@ process mutect2 {
     -O ${caseID}.within.ROmodel.tar.gz
     
     ${gatk_exec} GetPileupSummaries -I ${bamT} \
+    -R ${genome_fasta} \
     -V ${gatk_contamination_ref} \
     -L ${gatk_contamination_ref} \
     -O ${caseID}.within.getpileupsummaries.table
