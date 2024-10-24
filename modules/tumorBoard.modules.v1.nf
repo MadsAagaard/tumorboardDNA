@@ -1518,7 +1518,7 @@ workflow SUB_PAIRED_TN {
 
     pcgr_v212_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     }
-    
+
     if (params.wgs || params.hrdOnly) {
        // cnvkit_somatic(tumorNormal_cram_ch)
         //cnvkitExportFiles(cnvkit_somatic.out.CNVcalls, cnvkit_somatic.out.CNVcnr)
@@ -1555,6 +1555,6 @@ workflow SUB_PAIRED_TN {
 
 
     }
-    emit:    
-    mutect2_out=mutect2.out.mutect2_ALL
+   // emit:    
+    //mutect2_out=mutect2.out.mutect2_ALL
 }
