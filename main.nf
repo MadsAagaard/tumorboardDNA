@@ -31,6 +31,7 @@ params.fastqTMB                         =null
 params.cramTMB                          =null
 params.NGC                              =null
 params.assaytype                        =null
+params.hrdOnly                          =null
 //outdir_full_path= "${launchDir}/${params.outdir}/"
 
 runtype = "paired_TN"

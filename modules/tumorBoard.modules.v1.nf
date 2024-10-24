@@ -1501,6 +1501,7 @@ workflow SUB_PAIRED_TN {
     tumorNormal_cram_ch
     caseID_pcgrID
     main:
+    if (!params.hrdOnly) {
     mutect2(tumorNormal_cram_ch)
     strelka2(tumorNormal_cram_ch)
     strelka2_edits(tumorNormal_cram_ch.join(strelka2.out.strelkarenameVCF))
@@ -1516,8 +1517,9 @@ workflow SUB_PAIRED_TN {
     pcgr_v203_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
 
     pcgr_v212_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
-
-    if (params.wgs) {
+    }
+    
+    if (params.wgs || params.hrdOnly) {
        // cnvkit_somatic(tumorNormal_cram_ch)
         //cnvkitExportFiles(cnvkit_somatic.out.CNVcalls, cnvkit_somatic.out.CNVcnr)
         manta_somatic(tumorNormal_cram_ch)
