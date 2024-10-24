@@ -1544,10 +1544,9 @@ workflow SUB_PAIRED_TN {
         sage.out.join(purple_inhouse.out.purple_inhouse_for_hrd).join(manta_somatic.out.mantaSV_pass_inhouse)
         | set {hrd_inhouse_input}
 
-
         hrd_scores_fullSV(hrd_full_input)
         hrd_scores_inhouseSV(hrd_inhouse_input)
-//        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass_inhouse).join(sage.out)
+    //        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass_inhouse).join(sage.out)
   //      | set {purple_inhouse_input}
     //    hrd_scores_inhouseSV(purple_inhouse_input)
 
