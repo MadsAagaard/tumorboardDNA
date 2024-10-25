@@ -1172,8 +1172,7 @@ process manta_somatic {
 
     bcftools filter \
     -R {inhouse127_geneIntervals} \
-    -o ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz \
-    ${caseID}.manta.somaticSV.vcf.gz
+    -o ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz ${caseID}.manta.somaticSV.vcf.gz
     """
 }
 
