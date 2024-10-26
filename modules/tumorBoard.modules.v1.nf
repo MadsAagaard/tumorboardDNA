@@ -1007,7 +1007,7 @@ process pcgr_v212_mutect2 {
     --output_dir . \
     --vep_dir ${pcgr_VEP} \
     --genome_assembly ${grch_assembly} \
-    --sample_id ${sampleID} \
+    --sample_id ${caseID}_pcgr212 \
     --min_mutations_signatures 100 \
     --all_reference_signatures \
     --estimate_tmb \
@@ -1171,7 +1171,7 @@ process manta_somatic {
     -O ${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz
 
     bcftools filter \
-    -R {inhouse127_geneIntervals} \
+    -R ${inhouse127_geneIntervals} \
     -o ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz ${caseID}.manta.somaticSV.vcf.gz
     """
 }
