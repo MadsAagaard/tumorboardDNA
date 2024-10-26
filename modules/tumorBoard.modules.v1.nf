@@ -999,7 +999,7 @@ process pcgr_v212_mutect2 {
     def tumorsite=params.pcgrtumor ? "--tumor_site ${params.pcgrtumor}" : ""
     def rnaexp=params.rnaExp ? "--input_rna_expression ${rna}" : ""
     """
-    bcftools index -t ${vcf}
+    bcftools index -f -t ${vcf}
 
     pcgr \
     --input_vcf ${vcf} \
