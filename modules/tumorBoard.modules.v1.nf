@@ -825,6 +825,28 @@ process sequenza_R_output_conda {
     """
 }
 
+process sequenza_R_output_conda_editPARAMS {
+    errorStrategy 'ignore'
+    tag "$caseID"
+    publishDir "${caseID}/${outputDir}/", mode: 'copy'
+    //publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*_{segments,alternative_fit,genome_view}.{txt,pdf}"
+
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenzaEnv'
+    input:
+    tuple val(caseID),  path(seqz)
+
+    output:
+    path("sequenza_conda_editPARAMS/*")
+
+    script:
+    """
+    #!/usr/bin/env Rscript
+    library(sequenza)
+    t1 = sequenza.extract("${seqz}",verbose=F)
+    cp = sequenza.fit(t1, segment.filter=1e6)
+    sequenza.results(sequenza.extract = t1, cp.table = cp, sample.id = "${caseID}", out.dir = "sequenza_conda_editPARAMS", CNt.max=1000)
+    """
+}
 
 process pcgr_v141 {
     tag "$caseID"
@@ -1517,6 +1539,7 @@ workflow SUB_PAIRED_TN {
 
     sequenza_conda(tumorNormal_cram_ch)
     sequenza_R_output_conda(sequenza_conda.out)
+    sequenza_R_output_conda_editPARAMS(sequenza_conda.out)
     pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     pcgr_v203_strelka2(strelka2_edits.out.strelka2_PASS.join(caseID_pcgrID))
