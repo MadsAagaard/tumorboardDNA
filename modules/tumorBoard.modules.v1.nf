@@ -525,6 +525,7 @@ process tb_haplotypecaller {
     path("${caseID}.${sampleID}.${type}.HCbamout.*")
     path("${crai}")
     path("${cram}")
+    
     script:
     def datatype=params.wgs ? "": "-L ${ROI}"
     """
@@ -555,7 +556,7 @@ process mutect2 {
     maxForks 2
     }
     publishDir "${caseID}/${outputDir}/variantcalls/", mode: 'copy'
-    publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.for.VarSeq.*"
+    //publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.for.VarSeq.*"
     publishDir "${caseID}/${outputDir}/QC/mutect2_filtering/", mode: 'copy', pattern: "*.{table,stats,tsv}"
 
     input:
@@ -807,6 +808,7 @@ process sequenza_R_output_conda {
     tag "$caseID"
     publishDir "${caseID}/${outputDir}/", mode: 'copy'
     publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*_{segments,alternative_fit,genome_view}.{txt,pdf}"
+    publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "sequenza_conda/*_{alternative_fit,genome_view}.pdf"
 
     conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenzaEnv'
     input:
@@ -1006,7 +1008,7 @@ process pcgr_v203_strelka2_manualFilter {
 process pcgr_v212_mutect2 {
     errorStrategy 'ignore'
     publishDir "${caseID}/${outputDir}/PCGR212/mutect2/", mode: 'copy', pattern: "*.pcgr.*"
-
+    publishDir "${caseID}/${outputDir}/tumorBoard_files/",mode: 'copy', pattern:"*.html"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
     conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr212'
@@ -1205,7 +1207,7 @@ process hrd_scores_fullSV {
     tag "$caseID"
   
     publishDir "${caseID}/${outputDir}/NEWTOOLS/HRD_FULLSV/", mode: 'copy'
-
+    publishDir "${caseID}/${outputDir}/tumorBoard_files/",mode: 'copy', pattern: "*.txt"
     cpus 4
     maxForks 3
     conda '/lnx01_data3/shared/programmer/miniconda3/envs/sigrap011/'
@@ -1370,6 +1372,7 @@ process sage {
 }
 process purple_full {
     publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/PURPLE_FULL", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/tumorBoard_files/",mode: 'copy', pattern: "*.{png,purity.tsv}"
     errorStrategy 'ignore'
     tag "$caseID"
     cpus 12
@@ -1566,7 +1569,7 @@ workflow SUB_PAIRED_TN {
         | set {purple_inhouse_input}
 
         purple_full(purple_full_input)
-        purple_pass(purple_pass_input)
+    //    purple_pass(purple_pass_input)
         purple_inhouse(purple_inhouse_input)
         
         sage.out.join(purple_full.out.purple_full_for_hrd).join(manta_somatic.out.mantaSV_all)
