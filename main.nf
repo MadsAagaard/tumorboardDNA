@@ -67,7 +67,7 @@ switch (params.assaytype) {
     datapattern="EV8_BEH"
     break;
     default:
-    datapattern=""
+    datapattern="WGS"
     break;
 }
 
@@ -231,8 +231,10 @@ channel.fromPath(params.samplesheet)
     }
 
     if (params.cram ) {
-        cramfiles="${params.cram}/*{_,-}{${datapattern}}*.cram"
-        craifiles="${params.cram}/*{_,-}{${datapattern}}*.crai"
+    //    cramfiles="${params.cram}/*{_,-}{${datapattern}}*.cram"
+    //    craifiles="${params.cram}/*{_,-}{${datapattern}}*.crai"
+        cramfiles="${params.cram}/*.cram"
+        craifiles="${params.cram}/*.crai"
     }
 
     if (!params.fastqInput && !params.fastq) {
