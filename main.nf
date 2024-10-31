@@ -252,14 +252,16 @@ channel.fromPath(params.samplesheet)
         // Join with samplesheet:
         normalID_caseID // sampleID normal, caseID
         .join(sampleID_cram).join(sampleID_crai)
-        .map {tuple(it[1],it[0]+"_${datapattern}", it[2],it[3],"NORMAL")}
+ //       .map {tuple(it[1],it[0]+"_${datapattern}", it[2],it[3],"NORMAL")}
+        .map {tuple(it[1],it[0], it[2],it[3],"NORMAL")}
         .set { cram_normal }
         //above structure: caseID, NPN_EV8, CRAM, CRAI, NORMAL
         
 
         tumorID_caseID
         .join(sampleID_cram).join(sampleID_crai)
-        .map {tuple(it[1],it[0]+"_${datapattern}",it[2],it[3],"TUMOR")}
+ //       .map {tuple(it[1],it[0]+"_${datapattern}",it[2],it[3],"TUMOR")}
+        .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
         .set { cram_tumor }
         //above structure: caseID, NPN_EV8, CRAM, CRAI, TUMOR
         
