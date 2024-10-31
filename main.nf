@@ -67,7 +67,7 @@ switch (params.assaytype) {
     datapattern="EV8_BEH"
     break;
     default:
-    datapattern="EV8"
+    datapattern=""
     break;
 }
 
