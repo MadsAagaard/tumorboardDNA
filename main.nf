@@ -236,31 +236,33 @@ channel.fromPath(params.samplesheet)
         cramfiles="${params.cram}/*.cram"
         craifiles="${params.cram}/*.crai"
     }
-
+/*
     if (!params.fastqInput && !params.fastq) {
         Channel
         .fromPath(cramfiles)
-        .map { tuple(it.baseName.tokenize('_').get(0),it) }
+        .map { tuple(it.baseName.tokenize('_').get(0),it.baseName.tokenize('-').get(0),it) }
         .set { sampleID_cram }
-        // above: sampleID, sampleCRAM
+        // above: npn, sampleID, sampleCRAM
         Channel
         .fromPath(craifiles)
         .map { tuple(it.baseName.tokenize('_').get(0),it) }
         .set { sampleID_crai }
-        // above: sampleID, sampleCRAI
+        // above: npn, sampleID, sampleCRAI
 
         // Join with samplesheet:
-        normalID_caseID // sampleID normal, caseID
+        normalID_caseID // sampleID_normal, caseID
         .join(sampleID_cram).join(sampleID_crai)
- //       .map {tuple(it[1],it[0]+"_${datapattern}", it[2],it[3],"NORMAL")}
+     //      npn,caseID,sampleID,sampleCRAM, sampleCRAI
+        .map {tuple(it[1],it[0]+"_${datapattern}", it[2],it[3],"NORMAL")}
         .map {tuple(it[1],it[0], it[2],it[3],"NORMAL")}
         .set { cram_normal }
         //above structure: caseID, NPN_EV8, CRAM, CRAI, NORMAL
         
 
+
         tumorID_caseID
         .join(sampleID_cram).join(sampleID_crai)
- //       .map {tuple(it[1],it[0]+"_${datapattern}",it[2],it[3],"TUMOR")}
+        //       .map {tuple(it[1],it[0]+"_${datapattern}",it[2],it[3],"TUMOR")}
         .map {tuple(it[1],it[0],it[2],it[3],"TUMOR")}
         .set { cram_tumor }
         //above structure: caseID, NPN_EV8, CRAM, CRAI, TUMOR
@@ -285,6 +287,59 @@ channel.fromPath(params.samplesheet)
         .concat(tumor_cram_ch)
         .set { cram_per_sample_ch }
 
+    }
+*/
+
+
+    if (!params.fastqInput && !params.fastq) {
+        Channel
+        .fromPath(cramfiles)
+        .map { tuple(it.baseName.tokenize('_').get(0),it.baseName.tokenize('-').get(0),it) }
+        .set { sampleID_cram }
+        // above: npn, sampleID, sampleCRAM
+        Channel
+        .fromPath(craifiles)
+        .map { tuple(it.baseName.tokenize('_').get(0),it) }
+        .set { sampleID_crai }
+        // above: npn, sampleID, sampleCRAI
+
+        // Join with samplesheet:
+        normalID_caseID // sampleID_normal, caseID
+        .join(sampleID_cram).join(sampleID_crai)
+     //      npn,caseID,sampleID,sampleCRAM, sampleCRAI
+        .map {tuple(it[1], it[2],it[3],it[4],"NORMAL")}
+        .set { cram_normal }
+        //above structure: caseID, SampleID, CRAM, CRAI, NORMAL
+        
+
+
+        tumorID_caseID
+        .join(sampleID_cram).join(sampleID_crai)
+     //      npn,caseID,sampleID,sampleCRAM, sampleCRAI
+        .map {tuple(it[1], it[2],it[3],it[4],"TUMOR")}
+        .set { cram_tumor }
+        //above structure: caseID, SampleID, CRAM, CRAI, TUMOR
+        
+        cram_normal.concat(cram_tumor)
+        .set { case_npn_cram_crai_ch }
+        // caseID, NPN, CRAM, CRAI
+
+        case_npn_cram_crai_ch
+        .filter{it =~ /NORMAL/}
+        .set { normal_cram_ch }
+
+        case_npn_cram_crai_ch 
+        .filter{it =~ /TUMOR/}
+        .set { tumor_cram_ch }
+        
+        normal_cram_ch
+        .join(tumor_cram_ch)
+        .set { tumorNormal_cram_ch }
+
+        normal_cram_ch
+        .concat(tumor_cram_ch)
+        .set { cram_per_sample_ch }
+        tumorNormal_cram_ch.view()
     }
 
 log.info """\
