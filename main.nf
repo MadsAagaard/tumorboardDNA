@@ -294,7 +294,7 @@ channel.fromPath(params.samplesheet)
     if (!params.fastqInput && !params.fastq) {
         Channel
         .fromPath(cramfiles)
-        .map { tuple(it.baseName.tokenize('_').get(0),it.baseName.tokenize('-').get(0),it) }
+        .map { tuple(it.baseName.tokenize('_').get(0),it.baseName.tokenize('.').get(0),it) }
         .set { sampleID_cram }
         sampleID_cram.view()
         // above: npn, sampleID, sampleCRAM
