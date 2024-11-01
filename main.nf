@@ -296,8 +296,8 @@ channel.fromPath(params.samplesheet)
         .fromPath(cramfiles)
         .map { tuple(it.baseName.tokenize('_').get(0),it.baseName.tokenize('.').get(0),it) }
         .set { sampleID_cram }
-        sampleID_cram.view()
         // above: npn, sampleID, sampleCRAM
+
         Channel
         .fromPath(craifiles)
         .map { tuple(it.baseName.tokenize('_').get(0),it) }
