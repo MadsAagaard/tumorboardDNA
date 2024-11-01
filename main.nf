@@ -296,6 +296,7 @@ channel.fromPath(params.samplesheet)
         .fromPath(cramfiles)
         .map { tuple(it.baseName.tokenize('_').get(0),it.baseName.tokenize('-').get(0),it) }
         .set { sampleID_cram }
+        sampleID_cram.view()
         // above: npn, sampleID, sampleCRAM
         Channel
         .fromPath(craifiles)
@@ -339,7 +340,7 @@ channel.fromPath(params.samplesheet)
         normal_cram_ch
         .concat(tumor_cram_ch)
         .set { cram_per_sample_ch }
-        tumorNormal_cram_ch.view()
+        //tumorNormal_cram_ch.view()
     }
 
 log.info """\
