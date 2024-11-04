@@ -1184,7 +1184,7 @@ process manta_somatic {
 
     bcftools view \
     -i 'FILTER="PASS" | FILTER="."' \
-    ${caseID}.manta.somaticSV.vcf.gz > ${caseID}.manta.somaticSV.PASSonly.vcf.gz
+    ${caseID}.manta.somaticSV.vcf.gz > ${caseID}.manta.somaticSV.PASSonly.vcf
     
     bcftools filter \
     -R ${inhouse127_geneIntervals} \
