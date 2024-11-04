@@ -1240,11 +1240,11 @@ process hrd_scores_fullSV {
     """
 }
 
-process hrd_scores_inhouseSV {
+process hrd_scores_PASS {
     errorStrategy 'ignore'
     tag "$caseID"
   
-    publishDir "${caseID}/${outputDir}/NEWTOOLS/HRD_INHOUSE127/", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/HRD_PASSvariants/", mode: 'copy'
 
     cpus 4
     maxForks 3
@@ -1542,8 +1542,6 @@ workflow SUB_PAIRED_TN {
 
         hrd_scores_fullSV(hrd_full_input)
         hrd_scores_PASS(hrd_PASS_input)
-
-
 
     }
    // emit:    
