@@ -1,8 +1,8 @@
-# KG Vejle TumorBoard DNA script
+# KG Vejle TumorBoard DNA script - 
 
 ## General info:
 Requires a samplesheet containing 5 columns in specific order (tab separated), without headerline:
-1) caseID, 2) NPN normal WES, 3) NPN tumor WES, 4) NPN tumor RNA, 5) PCGR tumor value
+1) caseID, 2) NPN normal, 3) NPN tumor , 4) NPN tumor RNA, 5) PCGR tumor value
 
 
 The PCGR tumorcodes can be found at the end of this readme.
