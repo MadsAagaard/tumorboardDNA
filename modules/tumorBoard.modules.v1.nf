@@ -1181,22 +1181,21 @@ process manta_somatic {
     mv manta/results/variants/somaticSV.vcf.gz.tbi \
     ${caseID}.manta.somaticSV.vcf.gz.tbi
 
-    ${gatk_exec} SelectVariants \
-    -R ${genome_fasta} \
-    -V ${caseID}.manta.somaticSV.vcf.gz \
-    --exclude-filtered \
-    -O ${caseID}.manta.somaticSV.PASSonly.vcf.gz
 
-    ${gatk_exec} SelectVariants \
-    -R ${genome_fasta} \
-    -V ${caseID}.manta.somaticSV.vcf.gz \
-    -L ${inhouse127_geneIntervals} \
-    --exclude-filtered \
-    -O ${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz
-
+    bcftools view \
+    -i 'FILTER="PASS" | FILTER="."' \
+    ${caseID}.manta.somaticSV.vcf.gz > ${caseID}.manta.somaticSV.PASSonly.vcf.gz
+    
     bcftools filter \
     -R ${inhouse127_geneIntervals} \
     -o ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz ${caseID}.manta.somaticSV.vcf.gz
+
+    bgzip ${caseID}.manta.somaticSV.PASSonly.vcf
+    bcftools index -t ${caseID}.manta.somaticSV.PASSonly.vcf.gz
+
+    bgzip ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf
+    bcftools index -t ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz
+
     """
 }
 
@@ -1351,8 +1350,8 @@ process sage {
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
     
     output: 
-    tuple val(caseID), path("${caseID}_sage.somatic.SNV_INDELS.vcf.gz")
-    
+    tuple val(caseID), path("${caseID}_sage.somatic.SNV_INDELS.PASS.vcf.gz"),emit:sage_pass
+    tuple val(caseID), path("${caseID}_sage.somatic.SNV_INDELS.vcf.gz"),emit:sage_all
     script:
     """
     java -jar /data/shared/programmer/hmftools/sage_v3.4.4.jar \
@@ -1368,6 +1367,14 @@ process sage {
     -hotspots ${hmftools_data_dir_v534}/variants/KnownHotspots.somatic.38.vcf.gz \
     -panel_bed ${hmftools_data_dir_v534}/variants/ActionableCodingPanel.38.bed.gz \
     -output_vcf ${caseID}_sage.somatic.SNV_INDELS.vcf.gz
+
+    bcftools view \
+    -i 'FILTER="PASS" | FILTER="."' \
+    ${caseID}_sage.somatic.SNV_INDELS.vcf.gz > ${caseID}_sage.somatic.SNV_INDELS.PASS.vcf
+
+    bgzip ${caseID}_sage.somatic.SNV_INDELS.PASS.vcf
+    bcftools index -t ${caseID}_sage.somatic.SNV_INDELS.PASS.vcf.gz
+
     """
 }
 process purple_full {
@@ -1425,7 +1432,7 @@ process purple_pass {
 
     output:
     tuple val(caseID), path("${caseID}_purple/")
-    tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_for_hrd
+    tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_pass_for_hrd
     tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.PASS.circos.png")
     script:
     """
@@ -1452,48 +1459,6 @@ process purple_pass {
     """
 
 }
-
-process purple_inhouse {
-    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/PURPLE_PASS_INHOUSE/", mode: 'copy'
-    errorStrategy 'ignore'
-    tag "$caseID"
-    cpus 12
-
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos0699/' 
-
-    input:
-    tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
-
-    output:
-    tuple val(caseID), path("${caseID}_purple/")
-    tuple val(caseID), path("${caseID}.purple.cnv.somatic.tsv"), emit: purple_inhouse_for_hrd
-    tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.INHOUSE127.circos.png")
-    script:
-    """
-
-    java -jar /data/shared/programmer/hmftools/purple_v3.8.4.jar \
-    -reference ${sampleID_normal} \
-    -tumor ${sampleID_tumor} \
-    -ref_genome ${genome_fasta} \
-    -output_dir ${caseID}_purple \
-    -threads ${task.cpus} \
-    -ref_genome_version 38 \
-    -somatic_sv_vcf ${manta_sv} \
-    -somatic_vcf ${sage} \
-    -gc_profile ${hmftools_data_dir_v534}/copy_number/GC_profile.1000bp.38.cnp \
-    -ensembl_data_dir ${hmftools_data_dir_v534}/common/ensembl_data/ \
-    -amber ${amber} \
-    -cobalt ${cobalt} \
-    -circos circos
-
-    cp ${caseID}_purple/${sampleID_tumor}*.somatic.tsv ${caseID}.purple.cnv.somatic.tsv
-    cp ${caseID}_purple/${sampleID_tumor}*.qc ${caseID}.purple.qc
-    cp ${caseID}_purple/${sampleID_tumor}*.purity.tsv ${caseID}.purple.purity.tsv
-    cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.INHOUSE127.circos.png
-    """
-}
-
-
 
 
 /////////// SUBWORKFLOWS
@@ -1559,30 +1524,24 @@ workflow SUB_PAIRED_TN {
         cobalt(tumorNormal_cram_ch)
         sage(tumorNormal_cram_ch)
 
-        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_all).join(sage.out)
+        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_all).join(sage.out.sage_all)
         | set {purple_full_input}
 
-        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass).join(sage.out)
+        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_pass).join(sage.out.sage_pass)
         | set {purple_pass_input}
 
-        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_inhouse).join(sage.out)
-        | set {purple_inhouse_input}
-
         purple_full(purple_full_input)
-    //    purple_pass(purple_pass_input)
-        purple_inhouse(purple_inhouse_input)
+        purple_pass(purple_pass_input)
+       // purple_inhouse(purple_inhouse_input)
         
-        sage.out.join(purple_full.out.purple_full_for_hrd).join(manta_somatic.out.mantaSV_all)
+        sage.out.sage_all.join(purple_full.out.purple_full_for_hrd).join(manta_somatic.out.mantaSV_all)
         | set {hrd_full_input}
-        
-        sage.out.join(purple_inhouse.out.purple_inhouse_for_hrd).join(manta_somatic.out.mantaSV_inhouse)
-        | set {hrd_inhouse_input}
+
+        sage.out.sage_pass.join(purple_pass.out.purple_pass_for_hrd).join(manta_somatic.out.mantaSV_pass)
+        | set {hrd_PASS_input}
 
         hrd_scores_fullSV(hrd_full_input)
-        hrd_scores_inhouseSV(hrd_inhouse_input)
-    //        amber.out.join(cobalt.out).join(manta_somatic.out.mantaSV_inhouse).join(sage.out)
-  //      | set {purple_inhouse_input}
-    //    hrd_scores_inhouseSV(purple_inhouse_input)
+        hrd_scores_PASS(hrd_PASS_input)
 
 
 
