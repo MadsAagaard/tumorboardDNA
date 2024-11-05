@@ -176,11 +176,11 @@ switch (params.genome) {
 
         hapmap="/data/shared/genomes/hg38/program_DBs/GATK/resources_broad_hg38_v0_hapmap_3.3.hg38.vcf.gz"
         omni="/data/shared/genomes/hg38/program_DBs/GATK/resources_broad_hg38_v0_1000G_omni2.5.hg38.vcf.gz"
-        WES_ROI="/data/shared/genomes/hg38/interval.files/exome.ROIs/211130.hg38.refseq.gencode.fullexons.50bp.SM.bed"
+        //WES_ROI="/data/shared/genomes/hg38/interval.files/exome.ROIs/211130.hg38.refseq.gencode.fullexons.50bp.SM.bed"
 
         break;
 }
-
+/*
 switch (params.panel) {
     case "WES_2":
         ROI="${WES_ROI}";
@@ -197,6 +197,7 @@ switch (params.panel) {
         panelID="WES"
     break;
 }
+*/
 
 
 if (!params.archiveStorage) {
@@ -444,7 +445,7 @@ process tb_samtools {
     ${bam} > ${sampleID}.samtools.sample.stats.txt
     """
 }
-
+/*
 process tb_qualimap {
     errorStrategy 'ignore'
     tag "$sampleID"
@@ -486,6 +487,8 @@ process tb_fastqc_bam {
     singularity run -B ${s_bind} ${simgpath}/fastqc.sif --quiet --threads ${task.cpus} ${bam}
     """
 }
+*/
+
 
 process multiQC {
     errorStrategy 'ignore'
@@ -1490,8 +1493,8 @@ workflow SUB_DNA_QC {
  
     main:
     tb_samtools(cram_per_sample_ch)
-    tb_qualimap(cram_per_sample_ch)
-    tb_fastqc_bam(cram_per_sample_ch)
+   // tb_qualimap(cram_per_sample_ch)
+    //tb_fastqc_bam(cram_per_sample_ch)
     multiQC(tb_samtools.out.collect(),tb_qualimap.out.collect(),tb_fastqc_bam.out.collect())
 
 }
