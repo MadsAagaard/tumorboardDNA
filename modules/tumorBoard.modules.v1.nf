@@ -507,6 +507,7 @@ process multiQC {
     -n ${date}.TN_WES.multiQC.report.html \
     -f -q  ${launchDir}/*/${outputDir}/QC/
     """
+
 }
 
 
@@ -1497,7 +1498,7 @@ workflow SUB_DNA_QC {
     tb_samtools(cram_per_sample_ch)
    // tb_qualimap(cram_per_sample_ch)
     //tb_fastqc_bam(cram_per_sample_ch)
-    multiQC(tb_samtools.out.collect())
+ //   multiQC(tb_samtools.out.collect())
 
 }
 
