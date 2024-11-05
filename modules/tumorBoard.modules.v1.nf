@@ -1289,10 +1289,13 @@ process cobalt {
     publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
+
     if (params.server=="lnx01") {
     maxForks 1
     }
     cpus 16
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/hmftools/'
+
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
     
@@ -1301,7 +1304,7 @@ process cobalt {
     
     script:
     """
-    java -jar /data/shared/programmer/hmftools/cobalt-1.14.1.jar \
+    cobalt \
     -reference ${sampleID_normal} \
     -reference_bam ${bamN} \
     -tumor ${sampleID_tumor} \
@@ -1317,9 +1320,9 @@ process amber {
     publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
-    if (params.server=="lnx01") {
-    maxForks 1
-    }
+
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/hmftools/'
+
     cpus 12
     
     input: 
@@ -1330,7 +1333,7 @@ process amber {
     
     script:
     """
-    java -jar /data/shared/programmer/hmftools/amber-3.9.jar \
+    amber \
     -reference ${sampleID_normal} \
     -reference_bam ${bamN} \
     -tumor ${sampleID_tumor} \
@@ -1391,7 +1394,7 @@ process purple_full {
     tag "$caseID"
     cpus 12
 
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos0699/' 
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/hmftools/'
 
     input:
     tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
@@ -1402,8 +1405,7 @@ process purple_full {
     tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.circos.png")
     script:
     """
-
-    java -jar /data/shared/programmer/hmftools/purple_v3.8.4.jar \
+    purple \
     -reference ${sampleID_normal} \
     -tumor ${sampleID_tumor} \
     -ref_genome ${genome_fasta} \
@@ -1432,7 +1434,7 @@ process purple_pass {
     tag "$caseID"
     cpus 12
 
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos0699/' 
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/hmftools/'
 
     input:
     tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
@@ -1444,7 +1446,7 @@ process purple_pass {
     script:
     """
 
-    java -jar /data/shared/programmer/hmftools/purple_v3.8.4.jar \
+    purple \
     -reference ${sampleID_normal} \
     -tumor ${sampleID_tumor} \
     -ref_genome ${genome_fasta} \
