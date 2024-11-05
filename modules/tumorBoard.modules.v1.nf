@@ -47,14 +47,15 @@ switch (params.server) {
         tank_storage="/home/mmaj/tank.kga2/data/data.storage.archive/";
         modules_dir="/home/mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules/";
     break;
-    case 'kga01':
+    case 'rgi01':
+        s_bind="/data/:/data/,/lnx01_data2/:/lnx01_data2/,/fast/:/fast/,/lnx01_data3/:/lnx01_data3/";
         simgpath="/data/shared/programmer/simg";
-        s_bind="/data/:/data/";
-        tmpDIR="/data/TMP/TMP.${user}/";
         params.intervals_list="/data/shared/genomes/hg38/interval.files/WGS_splitIntervals/wgs_splitinterval_BWI_subdivision3/*.interval_list";
+        tmpDIR="/fast/TMP/TMP.${user}/";
         gatk_exec="singularity run -B ${s_bind} ${simgpath}/${gatk_image} gatk";
+        multiqc_config="/data/shared/programmer/configfiles/multiqc_config.yaml"
         tank_storage="/home/mmaj/tank.kga/data/data.storage.archive/";
-        modules_dir="/home/mmaj/LNX01_mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules/";
+        //modules_dir="/home/mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules/";
     break;
 }
 
@@ -376,6 +377,8 @@ process markDup_cram {
     publishDir "${caseID}/${outputDir}/CRAM/", mode: 'copy', pattern: "*.BWA.MD.cr*"
     publishDir "${caseID}/${outputDir}/variantcalls/Alignment_symlinks/", mode: 'link', pattern: "*.BWA.MD.cr*"
 
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sambamvcftools/' 
+
     input:
     tuple val(caseID),val(sampleID), path(bam), val(type)
     
@@ -559,6 +562,8 @@ process mutect2 {
     //publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*.for.VarSeq.*"
     publishDir "${caseID}/${outputDir}/QC/mutect2_filtering/", mode: 'copy', pattern: "*.{table,stats,tsv}"
 
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sambamvcftools/' 
+
     input:
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
  
@@ -701,6 +706,7 @@ process strelka2_edits {
     tag "$caseID"
     publishDir "${caseID}/${outputDir}/variantcalls/strelka2", mode: 'copy'
 
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sambamvcftools/' 
 
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN), val(typeN), val(sampleID_tumor),path(bamT), path(baiT), val(typeT), path(strelkavcf)
@@ -759,6 +765,7 @@ process msisensor {
     publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*_msi"
 
     conda '/lnx01_data3/shared/programmer/miniconda3/envs/msisensorPro120'
+
     if (params.server=="lnx01") {
     maxForks 2
     }
@@ -786,6 +793,11 @@ process sequenza_conda {
     if (params.server=="lnx01") {
     maxForks 2
     }
+
+    if (params.server=="rgi01") {
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenzaEnv/' 
+    }
+
     input:
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
     output:
@@ -888,12 +900,8 @@ process pcgr_v203_mutect2 {
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
   
-    if (params.server=="lnx01") {
-            conda '/data/shared/programmer/miniconda3/envs/pcgr203'
-    }
-    if (params.server=="lnx02") {
-        conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
-    }
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
+
 
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
@@ -928,12 +936,7 @@ process pcgr_v203_strelka2 {
     publishDir "${caseID}/${outputDir}/PCGR203/strelka2/", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
-    if (params.server=="lnx01") {
-        conda '/data/shared/programmer/miniconda3/envs/pcgr203'
-    }
-    if (params.server=="lnx02") {
-        conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
-    }
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
    
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
@@ -969,12 +972,7 @@ process pcgr_v203_strelka2_manualFilter {
     publishDir "${caseID}/${outputDir}/PCGR203/strelka2_manual", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
-    if (params.server=="lnx01") {
-        conda '/data/shared/programmer/miniconda3/envs/pcgr203'
-    }
-    if (params.server=="lnx02") {
-        conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
-    }
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
    
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
@@ -1011,7 +1009,7 @@ process pcgr_v212_mutect2 {
     publishDir "${caseID}/${outputDir}/tumorBoard_files/",mode: 'copy', pattern:"*.html"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr212'
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr212'  
    
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
@@ -1023,7 +1021,6 @@ process pcgr_v212_mutect2 {
     def tumorsite=params.pcgrtumor ? "--tumor_site ${params.pcgrtumor}" : ""
     def rnaexp=params.rnaExp ? "--input_rna_expression ${rna}" : ""
     """
-    bcftools index -f -t ${vcf}
 
     pcgr \
     --input_vcf ${vcf} \
@@ -1044,7 +1041,9 @@ process pcgr_v212_mutect2 {
     $tumorsite \
     $rnaexp
     """
+//bcftools index -f -t ${vcf}
 }
+
 
 /////// WGS ONLY PROCESSES ////////////////
 
@@ -1133,7 +1132,7 @@ process manta_somatic {
     if (params.server=="lnx01") {
     maxForks 1
     }
-
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sambamvcftools/' 
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
 
@@ -1343,9 +1342,11 @@ process sage {
     publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
+
     if (params.server=="lnx01") {
     maxForks 2
     }
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sambamvcftools/' 
     cpus 16
     input: 
     tuple val(caseID), val(sampleID_normal), path(bamN), path(baiN),val(typeN), val(sampleID_tumor),path(bamT), path(baiT),val(typeT)
