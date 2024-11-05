@@ -1426,7 +1426,6 @@ process purple_full {
     cp ${caseID}_purple/${sampleID_tumor}*.purity.tsv ${caseID}.purple.purity.tsv
     cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.circos.png
     """
-
 }
 
 process purple_pass {
