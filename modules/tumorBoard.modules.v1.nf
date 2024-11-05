@@ -1497,7 +1497,7 @@ workflow SUB_DNA_QC {
     tb_samtools(cram_per_sample_ch)
    // tb_qualimap(cram_per_sample_ch)
     //tb_fastqc_bam(cram_per_sample_ch)
-    multiQC(tb_samtools.out.collect(),tb_qualimap.out.collect(),tb_fastqc_bam.out.collect())
+    multiQC(tb_samtools.out.collect())
 
 }
 
