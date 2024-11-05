@@ -1395,7 +1395,7 @@ process purple_full {
     tag "$caseID"
     cpus 12
 
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/hmftools/'
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos_purple/'
 
     input:
     tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
