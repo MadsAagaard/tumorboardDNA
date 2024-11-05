@@ -1141,8 +1141,8 @@ process manta_somatic {
     tuple val(caseID), path("${caseID}.manta.*.{vcf,vcf.gz,gz.tbi}")
     tuple val(caseID), path("${caseID}.manta.somaticSV.vcf.gz"), emit: mantaSV_all
     tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.vcf.gz"), emit: mantaSV_pass
-    tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz"), emit: mantaSV_pass_inhouse
-    tuple val(caseID), path("${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz"), emit: mantaSV_inhouse
+//    tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz"), emit: mantaSV_pass_inhouse
+  //  tuple val(caseID), path("${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz"), emit: mantaSV_inhouse
 
     script:
     """
@@ -1185,20 +1185,21 @@ process manta_somatic {
     bcftools view \
     -i 'FILTER="PASS" | FILTER="."' \
     ${caseID}.manta.somaticSV.vcf.gz > ${caseID}.manta.somaticSV.PASSonly.vcf
-    
-    bcftools filter \
-    -R ${inhouse127_geneIntervals} \
-    -o ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf ${caseID}.manta.somaticSV.vcf.gz
 
     bgzip ${caseID}.manta.somaticSV.PASSonly.vcf
     bcftools index -t ${caseID}.manta.somaticSV.PASSonly.vcf.gz
 
-    bgzip ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf
-    bcftools index -t ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz
 
     """
 }
+/*
+    bcftools filter \
+    -R ${inhouse127_geneIntervals} \
+    -o ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf ${caseID}.manta.somaticSV.vcf.gz
 
+    bgzip ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf
+    bcftools index -t ${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz
+*/
 //bcftools filter -R {inhouse127_geneIntervals} -o ${caseID}.manta.somaticSV.PASSonly.bcftools.Inhouse127.vcf.gz ${caseID}.manta.somaticSV.vcf.gz
 
 process hrd_scores_fullSV {
