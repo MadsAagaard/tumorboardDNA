@@ -1146,8 +1146,8 @@ process manta_somatic {
     tuple val(caseID), path("${caseID}.manta.*.{vcf,vcf.gz,gz.tbi}")
     tuple val(caseID), path("${caseID}.manta.somaticSV.vcf.gz"), emit: mantaSV_all
     tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.vcf.gz"), emit: mantaSV_pass
-//    tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz"), emit: mantaSV_pass_inhouse
-  //  tuple val(caseID), path("${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz"), emit: mantaSV_inhouse
+    //    tuple val(caseID), path("${caseID}.manta.somaticSV.PASSonly.Inhouse127.vcf.gz"), emit: mantaSV_pass_inhouse
+     //  tuple val(caseID), path("${caseID}.manta.somaticSV.bcftools.Inhouse127.vcf.gz"), emit: mantaSV_inhouse
 
     script:
     """
@@ -1305,7 +1305,7 @@ process cobalt {
     
     script:
     """
-    cobalt \
+    cobalt -Xmx16G \
     -reference ${sampleID_normal} \
     -reference_bam ${bamN} \
     -tumor ${sampleID_tumor} \
@@ -1334,7 +1334,7 @@ process amber {
     
     script:
     """
-    amber \
+    amber -Xmx16G \
     -reference ${sampleID_normal} \
     -reference_bam ${bamN} \
     -tumor ${sampleID_tumor} \
@@ -1406,7 +1406,7 @@ process purple_full {
     tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.circos.png")
     script:
     """
-    purple \
+    purple -Xmx16G \
     -reference ${sampleID_normal} \
     -tumor ${sampleID_tumor} \
     -ref_genome ${genome_fasta} \
@@ -1447,7 +1447,7 @@ process purple_pass {
     script:
     """
 
-    purple \
+    purple -Xmx16G \
     -reference ${sampleID_normal} \
     -tumor ${sampleID_tumor} \
     -ref_genome ${genome_fasta} \
