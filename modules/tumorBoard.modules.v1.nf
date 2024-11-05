@@ -1305,7 +1305,7 @@ process cobalt {
     
     script:
     """
-    cobalt -Xmx16G \
+    cobalt "-Xmx16G" \
     -reference ${sampleID_normal} \
     -reference_bam ${bamN} \
     -tumor ${sampleID_tumor} \
@@ -1334,7 +1334,7 @@ process amber {
     
     script:
     """
-    amber -Xmx16G \
+    amber "-Xmx16G" \
     -reference ${sampleID_normal} \
     -reference_bam ${bamN} \
     -tumor ${sampleID_tumor} \
@@ -1406,7 +1406,7 @@ process purple_full {
     tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.circos.png")
     script:
     """
-    purple -Xmx16G \
+    purple "-Xmx16G" \
     -reference ${sampleID_normal} \
     -tumor ${sampleID_tumor} \
     -ref_genome ${genome_fasta} \
@@ -1447,7 +1447,7 @@ process purple_pass {
     script:
     """
 
-    purple -Xmx16G \
+    purple "-Xmx16G" \
     -reference ${sampleID_normal} \
     -tumor ${sampleID_tumor} \
     -ref_genome ${genome_fasta} \
