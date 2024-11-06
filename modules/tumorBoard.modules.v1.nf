@@ -662,7 +662,7 @@ process strelka2 {
     publishDir "${caseID}/${outputDir}/variantcalls/strelka2", mode: 'copy'
     cpus 10
 
-    if (params.server=="lnx01"||params.server=="rgi01") {
+    if (params.server=="lnx01"){
             conda '/data/shared/programmer/miniconda3/envs/py310'
     }
     
