@@ -1434,7 +1434,7 @@ process purple_pass {
     tag "$caseID"
     cpus 12
 
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos0699/'
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos_purple/'
 
     input:
     tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
@@ -1445,7 +1445,7 @@ process purple_pass {
     tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.PASS.circos.png")
     script:
     """
-    java -jar /data/shared/programmer/hmftools/purple_v3.8.4.jar \
+    purple "-Xmx8G" \
     -reference ${sampleID_normal} \
     -tumor ${sampleID_tumor} \
     -ref_genome ${genome_fasta} \
@@ -1458,7 +1458,7 @@ process purple_pass {
     -ensembl_data_dir ${hmftools_data_dir_v534}/common/ensembl_data/ \
     -amber ${amber} \
     -cobalt ${cobalt} \
-    -circos circos
+    -circos /lnx01_data3/shared/programmer/miniconda3/envs/circos_purple/bin/circos
 
     cp ${caseID}_purple/${sampleID_tumor}*.somatic.tsv ${caseID}.purple.cnv.somatic.tsv
     cp ${caseID}_purple/${sampleID_tumor}*.qc ${caseID}.purple.qc
