@@ -687,12 +687,12 @@ process strelka2 {
     -j ${task.cpus} \
     -m local
 
-    python3 /data/shared/programmer/VCFpytools/add_vaf_strelka2.py \
+    python /data/shared/programmer/VCFpytools/add_vaf_strelka2.py \
     --input strelka/results/variants/somatic.indels.vcf.gz \
     --output ${caseID}.strelka2.indels.vaf.vcf \
     --variant indel
 
-    python3 /data/shared/programmer/VCFpytools/add_vaf_strelka2.py \
+    python /data/shared/programmer/VCFpytools/add_vaf_strelka2.py \
     --input strelka/results/variants/somatic.snvs.vcf.gz \
     --output ${caseID}.strelka2.snvs.vaf.vcf \
     --variant snv
@@ -864,7 +864,7 @@ process sequenza_R_output_conda_editPARAMS {
     sequenza.results(sequenza.extract = t1, cp.table = cp, sample.id = "${caseID}", out.dir = "sequenza_conda_editPARAMS", CNt.max=1000)
     """
 }
-
+/*
 process pcgr_v141 {
     tag "$caseID"
     errorStrategy 'ignore'
@@ -934,14 +934,14 @@ process pcgr_v203_mutect2 {
     --estimate_signatures
     """
 }
+*/
 
-
-process pcgr_v203_strelka2 {
+process pcgr_v212_strelka2 {
     errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR203/strelka2/", mode: 'copy', pattern: "*.pcgr.*"
+    publishDir "${caseID}/${outputDir}/PCGR212/strelka2/", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr212'  
    
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
@@ -972,12 +972,12 @@ process pcgr_v203_strelka2 {
     """
 }
 
-process pcgr_v203_strelka2_manualFilter {
+process pcgr_v212_strelka2_manualFilter {
     errorStrategy 'ignore'
-    publishDir "${caseID}/${outputDir}/PCGR203/strelka2_manual", mode: 'copy', pattern: "*.pcgr.*"
+    publishDir "${caseID}/${outputDir}/PCGR212/strelka2_manual", mode: 'copy', pattern: "*.pcgr.*"
     //publishDir "${caseID}/${params.outdir}/tumorBoard_files/", mode: 'copy', pattern: "*.flexdb.html"
    
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr203'
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/pcgr212'  
    
     input:
     tuple val(caseID),  path(vcf), path(idx), val(pcgr_tumor)
@@ -1043,8 +1043,7 @@ process pcgr_v212_mutect2 {
     --assay WES \
     --pcgrr_conda /lnx01_data3/shared/programmer/miniconda3/envs/pcgrr212 \
     --estimate_signatures \
-    $tumorsite \
-    $rnaexp
+    --tumor_site ${pcgr_tumor}
     """
 //bcftools index -f -t ${vcf}
 }
@@ -1418,7 +1417,7 @@ process purple_full {
     -ensembl_data_dir ${hmftools_data_dir_v534}/common/ensembl_data/ \
     -amber ${amber} \
     -cobalt ${cobalt} \
-    -circos circos
+    -circos /lnx01_data3/shared/programmer/miniconda3/envs/circos_purple/bin/circos
 
     cp ${caseID}_purple/${sampleID_tumor}*.somatic.tsv ${caseID}.purple.cnv.somatic.tsv
     cp ${caseID}_purple/${sampleID_tumor}*.qc ${caseID}.purple.qc
@@ -1515,11 +1514,10 @@ workflow SUB_PAIRED_TN {
     sequenza_conda(tumorNormal_cram_ch)
     sequenza_R_output_conda(sequenza_conda.out)
     sequenza_R_output_conda_editPARAMS(sequenza_conda.out)
-    pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
-    pcgr_v203_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
-    pcgr_v203_strelka2(strelka2_edits.out.strelka2_PASS.join(caseID_pcgrID))
-    pcgr_v203_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
-
+   // pcgr_v141(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
+  //  pcgr_v203_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
+    pcgr_v212_strelka2(strelka2_edits.out.strelka2_PASS.join(caseID_pcgrID))
+    pcgr_v212_strelka2_manualFilter(strelka2_edits.out.strelka2_PASS_TMB_filtered.join(caseID_pcgrID))
     pcgr_v212_mutect2(mutect2.out.mutect2_tumorPASS.join(caseID_pcgrID))
     }
 
