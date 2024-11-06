@@ -799,7 +799,7 @@ process sequenza_conda {
     }
 
     if (params.server=="rgi01") {
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenzaEnv'
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenza30'
     }
 
     input:
@@ -1434,7 +1434,7 @@ process purple_pass {
     tag "$caseID"
     cpus 12
 
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos_purple/'
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/circos0699/'
 
     input:
     tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
@@ -1445,8 +1445,7 @@ process purple_pass {
     tuple path("${caseID}.purple.qc"), path("${caseID}.purple.purity.tsv"),path("${caseID}.purple.PASS.circos.png")
     script:
     """
-
-    purple "-Xmx16G" \
+    java -jar /data/shared/programmer/hmftools/purple_v3.8.4.jar \
     -reference ${sampleID_normal} \
     -tumor ${sampleID_tumor} \
     -ref_genome ${genome_fasta} \
@@ -1466,7 +1465,7 @@ process purple_pass {
     cp ${caseID}_purple/${sampleID_tumor}*.purity.tsv ${caseID}.purple.purity.tsv
     cp ${caseID}_purple/plot/${sampleID_tumor}.circos.png ${caseID}.purple.PASS.circos.png
     """
-
+//    purple "-Xmx16G" \
 }
 
 
