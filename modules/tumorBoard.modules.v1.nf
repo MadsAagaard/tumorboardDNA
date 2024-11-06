@@ -799,7 +799,7 @@ process sequenza_conda {
     }
 
     if (params.server=="rgi01") {
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenza30/' 
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenzaEnv'
     }
 
     input:
@@ -849,7 +849,7 @@ process sequenza_R_output_conda_editPARAMS {
     publishDir "${caseID}/${outputDir}/", mode: 'copy'
     //publishDir "${caseID}/${outputDir}/tumorBoard_files/", mode: 'copy', pattern: "*_{segments,alternative_fit,genome_view}.{txt,pdf}"
 
-    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenza30'
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/sequenzaEnv'
     input:
     tuple val(caseID),  path(seqz)
 
