@@ -687,12 +687,12 @@ process strelka2 {
     -j ${task.cpus} \
     -m local
 
-    python /data/shared/programmer/VCFpytools/add_vaf_strelka2.py \
+    python3 /data/shared/programmer/VCFpytools/add_vaf_strelka2.py \
     --input strelka/results/variants/somatic.indels.vcf.gz \
     --output ${caseID}.strelka2.indels.vaf.vcf \
     --variant indel
 
-    python /data/shared/programmer/VCFpytools/add_vaf_strelka2.py \
+    python3 /data/shared/programmer/VCFpytools/add_vaf_strelka2.py \
     --input strelka/results/variants/somatic.snvs.vcf.gz \
     --output ${caseID}.strelka2.snvs.vaf.vcf \
     --variant snv
