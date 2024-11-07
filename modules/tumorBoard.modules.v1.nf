@@ -955,7 +955,7 @@ process pcgr_v212_strelka2 {
     """
     pcgr \
     --input_vcf ${vcf} \
-    --refdata_dir  ${pcgr_data_dir2} \
+    --refdata_dir  ${pcgr_data_dir3} \
     --output_dir . \
     --vep_dir ${pcgr_VEP} \
     --genome_assembly ${pcgr_assembly} \
@@ -968,6 +968,7 @@ process pcgr_v212_strelka2 {
     --exclude_dbsnp_nonsomatic \
     $datatype \
     --tumor_site ${pcgr_tumor} \
+    --pcgrr_conda /lnx01_data3/shared/programmer/miniconda3/envs/pcgrr212 \
     --estimate_signatures
     """
 }
@@ -991,7 +992,7 @@ process pcgr_v212_strelka2_manualFilter {
     """
     pcgr \
     --input_vcf ${vcf} \
-    --refdata_dir  ${pcgr_data_dir2} \
+    --refdata_dir  ${pcgr_data_dir3} \
     --output_dir . \
     --vep_dir ${pcgr_VEP} \
     --genome_assembly ${pcgr_assembly} \
@@ -1004,6 +1005,7 @@ process pcgr_v212_strelka2_manualFilter {
     --exclude_dbsnp_nonsomatic \
     $datatype \
     --tumor_site ${pcgr_tumor} \
+    --pcgrr_conda /lnx01_data3/shared/programmer/miniconda3/envs/pcgrr212 \
     --estimate_signatures
     """
 }
