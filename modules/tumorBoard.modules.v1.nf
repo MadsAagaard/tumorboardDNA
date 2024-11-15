@@ -34,7 +34,8 @@ switch (params.server) {
         tmpDIR="/fast/TMP/TMP.${user}/";
         gatk_exec="singularity run -B ${s_bind} ${simgpath}/${gatk_image} gatk";
         multiqc_config="/data/shared/programmer/configfiles/multiqc_config.yaml"
-        tank_storage="/home/mmaj/tank.kga/data/data.storage.archive/";
+
+
         //modules_dir="/home/mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules/";
     break;
     case 'lnx01':
@@ -44,7 +45,7 @@ switch (params.server) {
         tmpDIR="/data/TMP/TMP.${user}/";
         gatk_exec="singularity run -B ${s_bind} ${simgpath}/${gatk_image} gatk";
         multiqc_config="/data/shared/programmer/configfiles/multiqc_config.yaml"
-        tank_storage="/home/mmaj/tank.kga2/data/data.storage.archive/";
+
         modules_dir="/home/mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules/";
     break;
     case 'rgi01':
@@ -54,7 +55,7 @@ switch (params.server) {
         tmpDIR="/fast/TMP/TMP.${user}/";
         gatk_exec="singularity run -B ${s_bind} ${simgpath}/${gatk_image} gatk";
         multiqc_config="/data/shared/programmer/configfiles/multiqc_config.yaml"
-        tank_storage="/home/mmaj/tank.kga/data/data.storage.archive/";
+
         //modules_dir="/home/mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules/";
     break;
 }
@@ -199,14 +200,10 @@ switch (params.panel) {
 }
 */
 
-
-if (!params.archiveStorage) {
+dataStorage="/lnx01_data3/storage/";
+variantStorage="${dataStorage}/variantStorage/${params.genome}/"
 outputDir="${params.outdir}/"
-}
 
-if (params.archiveStorage) {
-outputDir="${tank_storage}/alignedData/${params.genome}/${params.outdir}/"
-}
 
 
 Channel
@@ -523,13 +520,14 @@ process tb_haplotypecaller {
     tag "$sampleID"
     publishDir "${caseID}/${outputDir}/variantcalls/", mode: 'copy', pattern: "*.haplotypecaller.*"
     publishDir "${caseID}/${outputDir}/variantcalls/gvcf/", mode: 'copy', pattern: "*.g.*"
+    publishDir "${variantStorage}/gVCF/tumorBoard/", mode: 'copy', pattern:'*.g.vc*' //
+
     input:
     tuple val(caseID), val(sampleID), path(cram), path(crai),val(type) 
     
     output:
     tuple val(caseID), val(sampleID),  path("${caseID}.${sampleID}.${type}.haplotypecaller.vcf.gz"), path("${caseID}.${sampleID}.${type}.haplotypecaller.vcf.gz.tbi"),emit: sample_gvcf
     path("${caseID}.${sampleID}.${type}.g.*")
-    path("${caseID}.${sampleID}.${type}.HCbamout.*")
     path("${crai}")
     path("${cram}")
     
@@ -545,8 +543,7 @@ process tb_haplotypecaller {
     --native-pair-hmm-threads 30 \
     -pairHMM FASTEST_AVAILABLE \
     --dont-use-soft-clipped-bases \
-    -O ${caseID}.${sampleID}.${type}.g.vcf.gz \
-    -bamout ${caseID}.${sampleID}.${type}.HCbamout.bam
+    -O ${caseID}.${sampleID}.${type}.g.vcf.gz 
     
     ${gatk_exec} GenotypeGVCFs \
     -R ${genome_fasta} \
