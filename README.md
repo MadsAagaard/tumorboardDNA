@@ -1,8 +1,8 @@
-# KG Vejle TumorBoard DNA script
+# KG Vejle TumorBoard DNA script - 
 
 ## General info:
 Requires a samplesheet containing 5 columns in specific order (tab separated), without headerline:
-1) caseID, 2) NPN normal WES, 3) NPN tumor WES, 4) NPN tumor RNA, 5) PCGR tumor value
+1) caseID, 2) NPN normal, 3) NPN tumor , 4) NPN tumor RNA, 5) PCGR tumor value
 
 
 The PCGR tumorcodes can be found at the end of this readme.
@@ -11,7 +11,7 @@ Example samplesheet:
 
     johnDoe 112217976652	111184925465	111184925473    23
 
-The script will automatically look for fastq or cram files in subfolders at /lnx01_data2/shared/dataArchive/. This location contains read-only access to the data archive. Theres no need to copy or move any input data.
+The script will automatically look for fastq or cram files in subfolders at the KGVejle dataarchive location. Theres no need to copy or move any input data.
 
 The user can point to a specific folder containing input data using the --fastq or --cram option. 
 
