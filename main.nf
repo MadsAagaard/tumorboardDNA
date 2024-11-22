@@ -48,19 +48,14 @@ if (!params.wgs) {
 }
 */
 
-switch (params.assaytype) {
-
-    case 'wgs':
+if (params.wgs) {
     datapattern="WG4_NGC"
-    break;
-
-    case 'BEH':
-    datapattern="EV8_BEH"
-    break;
-    default:
-    datapattern="WGS"
-    break;
 }
+
+if (params.wes) {
+    datapattern="EV8"
+}
+
 
 def helpMessage() {
     log.info"""
