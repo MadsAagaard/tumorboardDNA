@@ -8,7 +8,7 @@ runID="${date}.${user}"
 
 params.rundir                           ="${launchDir.baseName}" 
 params.gatkTEMP                         ="${launchDir.baseName}/gatkTEMP"
-params.server                           ="lnx01"
+params.server                           =null
 params.genome                           ="hg38" 
 params.outdir                           ="TN_WES_results"
 params.panel                            ="WES_2"    // set ROI to full WES
