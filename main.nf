@@ -16,7 +16,6 @@ params.fastq                            =null
 params.cram                             =null
 params.fastqInput                       =null
 params.help                             =false
-params.pcgr_tumor                       =null
 params.qualimap                         =null
 params.samplesheet                      =null
 params.hg38v1                           =null
@@ -33,20 +32,12 @@ params.NGC                              =null
 params.assaytype                        =null
 params.hrdOnly                          =null
 //outdir_full_path= "${launchDir}/${params.outdir}/"
+dataArchive="/lnx01_data2/shared/dataArchive"
 
 runtype = "paired_TN"
 
 
-switch (params.server) {
-    case 'lnx02':
-     //   modules_dir="/home/mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules";
-        dataArchive="/lnx01_data2/shared/dataArchive";        
-    break;
-    case 'lnx01':
-     //   modules_dir="/home/mmaj/scripts_lnx01/nextflow_lnx01/dsl2/modules";
-        dataArchive="/lnx01_data2/shared/dataArchive";        
-    break;
-}
+
 /*
 if (params.wgs) {
     datapattern="WG4_NGC,WG4,WG3"
@@ -59,7 +50,7 @@ if (!params.wgs) {
 
 switch (params.assaytype) {
 
-    case 'NGC':
+    case 'wgs':
     datapattern="WG4_NGC"
     break;
 
@@ -76,7 +67,7 @@ def helpMessage() {
 
     Generel info:
     Requires a samplesheet containing 5 columns in specific order (tab separated), without headerline:
-    1) caseID, 2) NPN normal WES, 3) NPN tumor WES, 4) NPN tumor RNA, 5) PCGR tumor value
+    1) caseID, 2) NPN normal DNA, 3) NPN tumor DNA, 4) NPN tumor RNA, 5) PCGR tumor value
 
     Example samplesheet:
 
@@ -196,7 +187,7 @@ channel.fromPath(params.samplesheet)
     }
 
     if (!params.cram && !params.fastq && params.fastqInput) {
-        params.reads="${dataArchive}/{lnx01,lnx02,tank_kga_external_archive}/**/*{.,-}{${datapattern}}{.,-}*R{1,2}*{fq,fastq}.gz"
+        params.reads="${dataArchive}/{lnx01,lnx02,NGCdata}/**/*{.,-}{${datapattern}}{.,-}*R{1,2}*{fq,fastq}.gz"
     }
 
     if (!params.cram && (params.fastqInput ||params.fastq)) {
