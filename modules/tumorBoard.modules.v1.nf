@@ -1292,7 +1292,7 @@ process hrd_scores_PASS {
 
 
 process cobalt {
-    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
 
@@ -1323,7 +1323,7 @@ process cobalt {
 }
 
 process amber {
-    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/amber/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
 
@@ -1353,7 +1353,7 @@ process amber {
 }
 
 process sage {
-    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/SAGE/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
 
@@ -1393,8 +1393,10 @@ process sage {
 
     """
 }
+
+
 process purple_full {
-    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/PURPLE_FULL", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/PURPLE_FULL", mode: 'copy'
     publishDir "${caseID}/${outputDir}/tumorBoard_files/",mode: 'copy', pattern: "*.{png,purity.tsv}"
     errorStrategy 'ignore'
     tag "$caseID"
@@ -1434,7 +1436,7 @@ process purple_full {
 }
 
 process purple_pass {
-    publishDir "${caseID}/${outputDir}/NEWTOOLS/cobalt_amber_sage_purple/PURPLE_PASS/", mode: 'copy'
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/PURPLE_PASS/", mode: 'copy'
     errorStrategy 'ignore'
     tag "$caseID"
     cpus 12
@@ -1472,6 +1474,39 @@ process purple_pass {
     """
 //    purple "-Xmx16G" \
 }
+
+
+
+/*
+process lilac_HLA {
+    publishDir "${caseID}/${outputDir}/NEWTOOLS/LILAC/", mode: 'copy'
+    errorStrategy 'ignore'
+    tag "$caseID"
+    cpus 12
+
+    conda '/lnx01_data3/shared/programmer/miniconda3/envs/lilac/'
+
+    input:
+    tuple val(caseID), val(sampleID_normal), val(sampleID_tumor), path(amber),path(cobalt),path(manta_sv), path(sage)
+
+    output:
+      script:
+    """
+    lilac "-Xmx16G" \
+    -sample ${caseID} \
+    -reference_bam ${bamN} \
+    -tumor_bam ${bamT} \
+    -ref_genome ${genome_fasta} \
+    -resource_dir ${hmftools_data_dir_v534}/ref/38/immune/ \
+    -ref_genome_version 38 \
+    -somatic_vcf ${purpl.somatic.vcf.gz} \ //add to
+    -gene_copy_number ${purple.cnv.gene.tsv} \\ADDTO
+    -rna_bam
+    -output_dir ${caseID}_LILAC \
+    """
+
+}
+/*
 
 
 /////////// SUBWORKFLOWS
