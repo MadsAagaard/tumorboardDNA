@@ -52,7 +52,7 @@ if (params.wgs) {
     datapattern="WG4_NGC"
 }
 
-if (params.wes) {
+if (!params.wgs) {
     datapattern="EV8"
 }
 
